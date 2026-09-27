@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SM Premium Cleaners</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --border-color: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --accent: #f59e0b;
+      --tag-transfer: #0284c7;
+      --tag-cash: #b45309;
+      --tag-mensal: #9333ea;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg-color); color: var(--text-main); padding: 16px; padding-bottom: 50px; }
+    
+    header { text-align: center; margin-bottom: 16px; }
+    h1 { font-size: 22px; font-weight: 700; color: var(--primary); }
+
+    nav.tabs { display: flex; justify-content: space-around; background: #1e293b; padding: 6px; border-radius: 10px; margin-bottom: 16px; border: 1px solid var(--border-color); overflow-x: auto; }
+    nav.tabs button { flex: 1; padding: 10px; border: none; background: transparent; cursor: pointer; font-weight: 600; font-size: 13px; color: var(--text-muted); border-radius: 8px; white-space: nowrap; }
+    nav.tabs button.active { color: #fff; background: var(--primary); }
+
+    .controls-bar { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+    .week-selector { display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 10px; border-radius: 10px; border: 1px solid var(--border-color); }
+    .btn-sub-tab { flex: 1; padding: 8px; border: 1px solid var(--border-color); background: #334155; color: #fff; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; }
+    .btn-sub-tab.active { background: var(--primary); color: #0f172a; }
+
+    .btn { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-color); background: #334155; cursor: pointer; font-size: 13px; color: #fff; font-weight: 600; }
+    .btn-primary { background: var(--primary); color: #0f172a; border: none; width: 100%; padding: 12px; font-size: 15px; font-weight: 700; border-radius: 8px; }
+
+    .days-grid { display: flex; flex-direction: column; gap: 16px; }
+    .day-column { background: #1e293b; border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; }
+    .day-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color); }
+    .day-title { font-weight: 700; font-size: 16px; color: var(--primary); }
+    .day-stats { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+
+    .card { background: #0f172a; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .client-name { font-weight: 700; font-size: 16px; color: #fff; }
+    .actions { display: flex; gap: 4px; }
+    .btn-icon { border: 1px solid var(--border-color); background: #1e293b; cursor: pointer; font-size: 11px; color: var(--text-muted); width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+
+    .card-body { font-size: 13px; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; }
+    .card-input-inline { width: 60px; background: #1e293b; border: 1px solid var(--border-color); color: #fff; padding: 4px 6px; border-radius: 4px; font-size: 12px; font-weight: 600; text-align: center; }
+    
+    .badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; color: white; text-transform: uppercase; cursor: pointer; }
+    .badge-transfer { background-color: var(--tag-transfer); }
+    .badge-cash { background-color: var(--tag-cash); }
+    .badge-mensal { background-color: var(--tag-mensal); }
+
+    .time-row { display: flex; align-items: center; gap: 6px; font-size: 12px; margin-bottom: 6px; color: var(--text-muted); }
+    .time-input { background: #1e293b; border: 1px solid var(--border-color); color: #fff; padding: 3px 6px; border-radius: 4px; font-size: 12px; font-weight: 600; width: 65px; text-align: center; }
+
+    .time-per-person { font-size: 11px; color: var(--primary); margin-top: 4px; font-style: italic; }
+
+    .workers-section { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border-color); font-size: 12px; }
+    .workers-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .worker-chip { background: #334155; color: #cbd5e1; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 600; }
+    .worker-chip.selected { background: var(--primary); color: #0f172a; }
+    .worker-chip.owner { background: #d97706; color: #fff; }
+
+    .team-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .team-table th, .team-table td { padding: 10px; border: 1px solid var(--border-color); text-align: left; font-size: 13px; }
+    .team-table th { background: #0f172a; color: var(--primary); }
+
+    .section-box { background: #1e293b; border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+
+    /* VISITAS */
+    .form-group { margin-bottom: 14px; }
+    .form-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; display: block; letter-spacing: 0.5px; }
+    .form-input, .form-textarea { width: 100%; padding: 10px; background: #0f172a; border: 1px solid var(--border-color); border-radius: 6px; color: #fff; font-size: 14px; }
+    .form-row { display: flex; gap: 12px; margin-bottom: 14px; }
+    .form-col { flex: 1; }
+
+    .toggle-group { display: flex; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; }
+    .toggle-btn { flex: 1; padding: 8px; background: #0f172a; color: var(--text-muted); border: none; cursor: pointer; font-weight: 600; font-size: 13px; text-align: center; }
+    .toggle-btn.active { background: #1e3a5f; color: #38bdf8; font-weight: 700; }
+
+    .counter-box { display: flex; align-items: center; justify-content: space-between; background: #0f172a; border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 8px; }
+    .counter-btn { width: 28px; height: 28px; background: #1e293b; border: 1px solid var(--border-color); color: #fff; font-size: 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+
+    .bathroom-row { display: flex; align-items: center; justify-content: space-between; background: #0f172a; border: 1px solid var(--border-color); padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; }
+    .btn-add-sub { width: 100%; padding: 8px; background: transparent; border: 1px dashed var(--border-color); color: var(--primary); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
+
+    .calc-row { display: flex; align-items: center; gap: 10px; background: #0f172a; padding: 12px; border-radius: 6px; border: 1px solid var(--border-color); margin-top: 10px; }
+  </style>
+
+  <!-- FIREBASE SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+  <header>
+    <h1>SM Premium Cleaners</h1>
+    <div id="sync-status" style="font-size: 11px; color: var(--primary); margin-top: 4px;">🔄 Conectando em tempo real...</div>
+  </header>
+
+  <nav class="tabs">
+    <button class="active" onclick="switchTab('agenda')">Agenda</button>
+    <button onclick="switchTab('equipe')">Equipe</button>
+    <button onclick="switchTab('visitas')">Visitas</button>
+    <button onclick="switchTab('financeiro')">Financeiro</button>
+    <button onclick="switchTab('backup')">Backup</button>
+  </nav>
+
+  <!-- ABA AGENDA -->
+  <div id="tab-agenda">
+    <div class="controls-bar">
+      <div class="week-selector">
+        <button class="btn-sub-tab active" id="sub-sem1" onclick="selectWeek('semana1')">Semana 1</button>
+        <button class="btn-sub-tab" id="sub-sem2" onclick="selectWeek('semana2')">Semana 2</button>
+        <button class="btn-sub-tab" id="sub-outros" onclick="selectWeek('outros')">Outros / Mensal</button>
+      </div>
+      <button class="btn btn-primary" onclick="addNewClient()">+ Novo Agendamento</button>
+    </div>
+
+    <div class="days-grid" id="days-container"></div>
+  </div>
+
+  <!-- ABA EQUIPE -->
+  <div id="tab-equipe" style="display:none;">
+    <div class="section-box">
+      <h3 style="color: var(--primary); margin-bottom: 12px;">Relatório da Equipe na Semana Selecionada</h3>
+      <table class="team-table">
+        <thead>
+          <tr>
+            <th>Funcionário</th>
+            <th>Taxa (£/h) / Função</th>
+            <th>Horas Trabalhadas</th>
+            <th>A Receber (£)</th>
+          </tr>
+        </thead>
+        <tbody id="team-summary-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ABA VISITAS -->
+  <div id="tab-visitas" style="display:none;">
+    <div class="section-box" style="position: relative;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="color: var(--primary); font-size: 18px;">Nova Visita</h3>
+        <button onclick="clearVisitForm()" style="background:none; border:none; color:#ef4444; font-size:12px; cursor:pointer; font-weight:600;">remover / limpar</button>
+      </div>
+
+      <div class="form-row">
+        <div class="form-col">
+          <label class="form-label">NOME</label>
+          <input type="text" id="v-nome" class="form-input" placeholder="Nome do cliente">
+        </div>
+        <div class="form-col">
+          <label class="form-label">ENDEREÇO</label>
+          <input type="text" id="v-endereco" class="form-input" placeholder="Endereço">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">PRIORIDADES</label>
+        <textarea id="v-prioridades" class="form-textarea" rows="2" placeholder="O que o cliente pediu pra priorizar..."></textarea>
+      </div>
+
+      <div class="form-row">
+        <div class="form-col">
+          <label class="form-label">TEM PET?</label>
+          <div class="toggle-group">
+            <button id="btn-pet-sim" class="toggle-btn" onclick="setPet(true)">Sim</button>
+            <button id="btn-pet-nao" class="toggle-btn active" onclick="setPet(false)">Não</button>
+          </div>
+        </div>
+        <div class="form-col">
+          <label class="form-label">TEM CRIANÇAS?</label>
+          <div class="toggle-group">
+            <button id="btn-criancas-sim" class="toggle-btn" onclick="setCriancas(true)">Sim</button>
+            <button id="btn-criancas-nao" class="toggle-btn active" onclick="setCriancas(false)">Não</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-col">
+          <label class="form-label">QUARTOS</label>
+          <div class="counter-box">
+            <button class="counter-btn" onclick="updateCounter('quartos', -1)">-</button>
+            <span id="cnt-quartos" style="font-weight: bold;">0</span>
+            <button class="counter-btn" onclick="updateCounter('quartos', 1)">+</button>
+          </div>
+        </div>
+        <div class="form-col">
+          <label class="form-label">LAVABO</label>
+          <div class="counter-box">
+            <button class="counter-btn" onclick="updateCounter('lavabo', -1)">-</button>
+            <span id="cnt-lavabo" style="font-weight: bold;">0</span>
+            <button class="counter-btn" onclick="updateCounter('lavabo', 1)">+</button>
+          </div>
+        </div>
+        <div class="form-col">
+          <label class="form-label">SALAS</label>
+          <div class="counter-box">
+            <button class="counter-btn" onclick="updateCounter('salas', -1)">-</button>
+            <span id="cnt-salas" style="font-weight: bold;">0</span>
+            <button class="counter-btn" onclick="updateCounter('salas', 1)">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">BANHEIROS (MÁX. 5)</label>
+        <div id="bathrooms-container"></div>
+        <button class="btn-add-sub" onclick="addBathroom()">+ adicionar banheiro</button>
+      </div>
+
+      <div class="form-group" style="margin-top: 14px;">
+        <label class="form-label">PISO</label>
+        <div class="toggle-group" id="piso-toggle">
+          <button class="toggle-btn active" onclick="setPiso('Piso', this)">Piso</button>
+          <button class="toggle-btn" onclick="setPiso('Carpet', this)">Carpet</button>
+          <button class="toggle-btn" onclick="setPiso('Madeira', this)">Madeira</button>
+          <button class="toggle-btn" onclick="setPiso('Misto', this)">Misto</button>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-col">
+          <label class="form-label">TEMPO ESTIMADO (1ª LIMPEZA)</label>
+          <input type="text" id="v-tempo-1" class="form-input" placeholder="ex: 5h">
+        </div>
+        <div class="form-col">
+          <label class="form-label">TEMPO COMBINADO (RECORRENTE)</label>
+          <input type="number" id="v-tempo-comb" class="form-input" placeholder="ex: 3" oninput="calculateVisitTotal()">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">VALOR POR HORA × TOTAL (LIGADOS)</label>
+        <div class="calc-row">
+          <input type="number" id="v-rate" class="form-input" style="width: 80px;" placeholder="£/HORA" oninput="calculateVisitTotal()">
+          <span style="color:var(--text-muted);">× <span id="lbl-horas-comb">0</span> =</span>
+          <strong style="font-size: 18px; color: var(--primary);" id="lbl-total-visita">£0.00</strong>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="saveVisit()" style="margin-top: 15px;">Salvar Visita</button>
+    </div>
+
+    <!-- LISTA DE VISITAS SALVAS -->
+    <div class="section-box">
+      <h3 style="color: var(--primary); margin-bottom: 12px;">Visitas Guardadas</h3>
+      <div id="saved-visits-list"></div>
+    </div>
+  </div>
+
+  <!-- ABA FINANCEIRO -->
+  <div id="tab-financeiro" style="display:none;">
+    <div class="section-box">
+      <h3 style="color: var(--primary); margin-bottom: 12px;">Resumo Financeiro</h3>
+      <div id="financial-summary" style="font-size: 14px; line-height: 1.8;"></div>
+    </div>
+  </div>
+
+  <!-- ABA BACKUP -->
+  <div id="tab-backup" style="display:none;">
+    <div class="section-box">
+      <h3 style="color: var(--primary); margin-bottom: 12px;">Gerenciamento de Dados</h3>
+      <button class="btn" onclick="exportJSON()" style="margin-right: 10px;">Exportar Dados (JSON)</button>
+      <button class="btn" onclick="resetToInitialData()" style="background: #ef4444; border:none;">Restaurar Lista Inicial</button>
+    </div>
+  </div>
+
+  <script>
+    // CONFIGURAÇÃO DO FIREBASE
+    const firebaseConfig = {
+      apiKey: "AIzaSyCgqJMnBcwCI4eEEOS3wxa3uFrmcXMN9dA",
+      authDomain: "cleaningapp-f7e58.firebaseapp.com",
+      projectId: "cleaningapp-f7e58",
+      storageBucket: "cleaningapp-f7e58.appspot.com",
+      messagingSenderId: "499257274532",
+      appId: "1:499257274532:web:4dea74fe36d6258d793631"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const appDataRef = db.ref('sm_cleaners_app_data');
+
+    const exactListData = {
+      selectedWeekKey: "semana1",
+      teamMembers: [
+        { name: "Roberta", rate: 15, isOwner: false },
+        { name: "Lorruama", rate: 12.21, isOwner: false },
+        { name: "Victor Hugo", rate: 12.21, isOwner: false },
+        { name: "Suzana", rate: 0, isOwner: true },
+        { name: "Márcio", rate: 0, isOwner: true }
+      ],
+      visits: [],
+      weeks: {
+        semana1: {
+          segunda: [
+            { id: "s1_seg_1", name: "Bernadette", horario: "08:00", horarioFim: "10:30", hours: 10, value: 200, pay: "transfer", mensal: true, workers: ["Roberta", "Lorruama", "Suzana", "Márcio"] },
+            { id: "s1_seg_2", name: "Bushra", horario: "10:45", horarioFim: "11:45", hours: 4, value: 84, pay: "transfer", mensal: true, workers: ["Roberta", "Lorruama"] },
+            { id: "s1_seg_3", name: "Jessica", horario: "12:00", horarioFim: "13:30", hours: 3, value: 63, pay: "transfer", mensal: false, workers: [] },
+            { id: "s1_seg_4", name: "Katrina", horario: "13:35", horarioFim: "14:50", hours: 5, value: 105, pay: "transfer", mensal: false, workers: [] },
+            { id: "s1_seg_5", name: "Rachel Nova", horario: "15:00", horarioFim: "16:00", hours: 3.5, value: 73.5, pay: "cash", mensal: false, workers: [] },
+            { id: "s1_seg_6", name: "Rachel Fazendinha", horario: "16:10", horarioFim: "17:10", hours: 3, value: 63, pay: "cash", mensal: false, workers: [] },
+            { id: "s1_seg_7", name: "Jeanette", horario: "17:20", horarioFim: "18:20", hours: 2, value: 42, pay: "cash", mensal: false, workers: [] }
+          ],
+          terca: [
+            { id: "s1_ter_1", name: "Rhiannon", horario: "08:00", horarioFim: "09:00", hours: 4, value: 84, pay: "cash", mensal: false, workers: [] },
+            { id: "s1_ter_2", name: "Sasha", horario: "09:10", horarioFim: "10:10", hours: 3, value: 63, pay: "cash", mensal: false, workers: ["Victor Hugo"] },
+            { id: "s1_ter_3", name: "Phoebe", horario: "10:20", horarioFim: "11:20", hours: 3, value: 63, pay: "cash", mensal: false, workers: [] },
+            { id: "s1_ter_4", name: "Georgie", horario: "11:30", horarioFim: "12:30", hours: 4, value: 84, pay: "transfer", mensal: false, workers: [] },
+            { id: "s1_ter_5", name: "Rod", horario: "12:40", horarioFim: "13:40", hours: 3, value: 63, pay: "transfer", mensal: false, workers: [] },
+            { id: "s1_ter_6", name: "Lindsay", horario: "13:50", horarioFim: "14:50", hours: 3, value: 60, pay: "cash", mensal: false, workers: [] },
+            { id: "s1_ter_7", name: "Caroline", horario: "15:00", horarioFim: "16:00", hours: 2, value: 42, pay: "cash", mensal: false, workers: [] },
+            { id: "s1_ter_8", name: "Tom", horario: "16:10", horarioFim: "17:10", hours: 3, value: 63, pay: "cash", mensal: false, workers: [] },
+            { id: "s1_ter_9", name: "Ella", horario: "17:20", horarioFim: "18:20", hours: 2, value: 42, pay: "cash", mensal: false, workers: [] }
+          ],
+          quarta: [
+            { id: "s1_qua_1", name: "Jo", horario: "08:00", horarioFim: "10:00", hours: 6, value: 120, pay: "cash", mensal: false, workers: [] },
+            { id: "s1_qua_2", name: "Katie Claverton", horario: "10:10", horarioFim: "12:10", hours: 8, value: 160, pay: "transfer", mensal: false, workers: [] },
+            { id: "s1_qua_3", name: "Angie", horario: "12:20", horarioFim: "14:00", hours: 5, value: 105, pay: "transfer", mensal: false, workers: [] },
+            { id: "s1_qua_4", name: "Jaime", horario: "14:10", horarioFim: "15:10", hours: 3, value: 63, pay: "cash", mensal: false, workers: [] },
+            { id: "s1_qua_5", name: "Katherine", horario: "15:20", horarioFim: "16:20", hours: 3, value: 63, pay: "transfer", mensal: false, workers: [] },
+            { id: "s1_qua_6", name: "Anne Marie", horario: "16:30", horarioFim: "17:30", hours: 2, value: 42, pay: "cash", mensal: false, workers: [] }
+          ],
+          quinta: [
+            { id: "s1_qui_1", name: "Emma", horario: "08:00", horarioFim: "09:20", hours: 4, value: 80, pay: "transfer", mensal: false, workers: [] },
+            { id: "s1_qui_2", name: "Gemma", horario: "09:30", horarioFim: "10:30", hours: 3, value: 63, pay: "transfer", mensal: false, workers: [] },
+            { id: "s1_qui_3", name: "Ian", horario: "10:40", horarioFim: "11:40", hours: 3, value: 60, pay: "cash", mensal: false, workers: [] },
+            { id: "s1_qui_4", name: "Anne", horario: "11:50", horarioFim: "13:00", hours: 4, value: 88, pay: "transfer", mensal: false, workers: [] },
+            { id: "s1_qui_5", name: "Lynne", horario: "13:10", horarioFim: "14:20", hours: 4, value: 84, pay: "cash", mensal: false, workers: [] },
+            { id: "s1_qui_6", name: "Arabee", horario: "14:30", horarioFim: "15:40", hours: 4, value: 84, pay: "transfer", mensal: false, workers: [] },
+            { id: "s1_qui_7", name: "Laura", horario: "15:50", horarioFim: "17:30", hours: 6, value: 120, pay: "transfer", mensal: false, workers: [] },
+            { id: "s1_qui_8", name: "Julia", horario: "17:40", horarioFim: "19:00", hours: 6, value: 120, pay: "transfer", mensal: false, workers: [] }
+          ],
+          sexta: [
+            { id: "s1_sex_1", name: "Bernadette", horario: "08:00", horarioFim: "10:15", hours: 9, value: 180, pay: "transfer", mensal: true, workers: [] },
+            { id: "s1_sex_2", name: "Pippa", horario: "10:30", horarioFim: "12:00", hours: 6, value: 132, pay: "transfer", mensal: false, workers: [] },
+            { id: "s1_sex_3", name: "Chris", horario: "12:10", horarioFim: "13:10", hours: 4, value: 84, pay: "transfer", mensal: false, workers: [] },
+            { id: "s1_sex_4", name: "Tim", horario: "13:20", horarioFim: "14:20", hours: 2, value: 42, pay: "transfer", mensal: false, workers: [] },
+            { id: "s1_sex_5", name: "Rob", horario: "14:30", horarioFim: "15:30", hours: 3, value: 63, pay: "cash", mensal: false, workers: [] },
+            { id: "s1_sex_6", name: "James", horario: "15:40", horarioFim: "16:40", hours: 4, value: 84, pay: "cash", mensal: false, workers: [] }
+          ]
+        },
+        semana2: {
+          segunda: [
+            { id: "s2_seg_1", name: "Bernadette", horario: "08:00", horarioFim: "10:30", hours: 10, value: 200, pay: "transfer", mensal: true, workers: [] },
+            { id: "s2_seg_2", name: "Bushra", horario: "10:45", horarioFim: "11:45", hours: 4, value: 84, pay: "transfer", mensal: true, workers: [] },
+            { id: "s2_seg_3", name: "Jessica", horario: "12:00", horarioFim: "13:00", hours: 3, value: 63, pay: "transfer", mensal: false, workers: [] },
+            { id: "s2_seg_4", name: "Katrina", horario: "13:10", horarioFim: "14:30", hours: 5, value: 105, pay: "transfer", mensal: false, workers: [] },
+            { id: "s2_seg_5", name: "Rachel Nova", horario: "14:40", horarioFim: "15:40", hours: 3.5, value: 73.5, pay: "cash", mensal: false, workers: [] },
+            { id: "s2_seg_6", name: "Rachel Fazendinha", horario: "15:50", horarioFim: "16:50", hours: 3, value: 63, pay: "cash", mensal: false, workers: [] },
+            { id: "s2_seg_7", name: "Jacqueline", horario: "17:00", horarioFim: "18:30", hours: 6, value: 120, pay: "cash", mensal: false, workers: [] }
+          ],
+          terca: [
+            { id: "s2_ter_1", name: "Rhiannon", horario: "08:00", horarioFim: "09:00", hours: 4, value: 84, pay: "cash", mensal: false, workers: [] },
+            { id: "s2_ter_2", name: "Sasha", horario: "09:10", horarioFim: "10:10", hours: 3, value: 63, pay: "cash", mensal: false, workers: [] },
+            { id: "s2_ter_3", name: "Phoebe", horario: "10:20", horarioFim: "11:20", hours: 3, value: 63, pay: "cash", mensal: false, workers: [] },
+            { id: "s2_ter_4", name: "Rod", horario: "11:30", horarioFim: "12:30", hours: 3, value: 63, pay: "transfer", mensal: false, workers: [] },
+            { id: "s2_ter_5", name: "Caroline", horario: "12:40", horarioFim: "13:40", hours: 2, value: 42, pay: "cash", mensal: false, workers: [] },
+            { id: "s2_ter_6", name: "Carol", horario: "13:50", horarioFim: "14:50", hours: 3, value: 63, pay: "transfer", mensal: false, workers: [] },
+            { id: "s2_ter_7", name: "Brent", horario: "15:00", horarioFim: "16:00", hours: 4, value: 84, pay: "transfer", mensal: false, workers: [] },
+            { id: "s2_ter_8", name: "Vanya", horario: "16:10", horarioFim: "17:30", hours: 5, value: 100, pay: "transfer", mensal: false, workers: [] }
+          ],
+          quarta: [
+            { id: "s2_qua_1", name: "Jo", horario: "08:00", horarioFim: "09:30", hours: 6, value: 120, pay: "cash", mensal: false, workers: [] },
+            { id: "s2_qua_2", name: "Katie Claverton", horario: "09:40", horarioFim: "11:40", hours: 8, value: 160, pay: "transfer", mensal: false, workers: [] },
+            { id: "s2_qua_3", name: "Angie", horario: "11:50", horarioFim: "13:00", hours: 5, value: 105, pay: "transfer", mensal: false, workers: [] },
+            { id: "s2_qua_4", name: "Sarah", horario: "13:10", horarioFim: "14:10", hours: 4, value: 84, pay: "transfer", mensal: false, workers: [] },
+            { id: "s2_qua_5", name: "Rachel Porquinho", horario: "14:20", horarioFim: "15:20", hours: 4, value: 84, pay: "cash", mensal: false, workers: [] },
+            { id: "s2_qua_6", name: "Lucia", horario: "15:30", horarioFim: "16:30", hours: 4, value: 84, pay: "transfer", mensal: false, workers: [] },
+            { id: "s2_qua_7", name: "Sean", horario: "16:40", horarioFim: "17:40", hours: 3, value: 63, pay: "cash", mensal: false, workers: [] }
+          ],
+          quinta: [
+            { id: "s2_qui_1", name: "Emma", horario: "08:00", horarioFim: "09:00", hours: 4, value: 80, pay: "transfer", mensal: false, workers: [] },
+            { id: "s2_qui_2", name: "Ian", horario: "09:10", horarioFim: "10:10", hours: 3, value: 60, pay: "cash", mensal: false, workers: [] },
+            { id: "s2_qui_3", name: "Anne", horario: "10:20", horarioFim: "11:20", hours: 4, value: 88, pay: "transfer", mensal: false, workers: [] },
+            { id: "s2_qui_4", name: "Arabee", horario: "11:30", horarioFim: "12:30", hours: 4, value: 84, pay: "transfer", mensal: false, workers: [] },
+            { id: "s2_qui_5", name: "Laura", horario: "12:40", horarioFim: "14:10", hours: 6, value: 120, pay: "transfer", mensal: false, workers: [] },
+            { id: "s2_qui_6", name: "Jane", horario: "14:20", horarioFim: "15:50", hours: 6, value: 120, pay: "cash", mensal: false, workers: [] },
+            { id: "s2_qui_7", name: "Susie", horario: "16:00", horarioFim: "17:00", hours: 3, value: 63, pay: "cash", mensal: false, workers: [] },
+            { id: "s2_qui_8", name: "Julia", horario: "17:10", horarioFim: "18:40", hours: 6, value: 120, pay: "transfer", mensal: false, workers: [] }
+          ],
+          sexta: [
+            { id: "s2_sex_1", name: "Bernadette", horario: "08:00", horarioFim: "10:15", hours: 9, value: 180, pay: "transfer", mensal: true, workers: [] },
+            { id: "s2_sex_2", name: "Pippa", horario: "10:30", horarioFim: "12:00", hours: 6, value: 132, pay: "transfer", mensal: false, workers: [] },
+            { id: "s2_sex_3", name: "Chris", horario: "12:10", horarioFim: "13:10", hours: 4, value: 84, pay: "transfer", mensal: false, workers: [] },
+            { id: "s2_sex_4", name: "James", horario: "13:20", horarioFim: "14:20", hours: 4, value: 84, pay: "cash", mensal: false, workers: [] },
+            { id: "s2_sex_5", name: "Tim", horario: "14:30", horarioFim: "15:30", hours: 2, value: 42, pay: "transfer", mensal: false, workers: [] },
+            { id: "s2_sex_6", name: "Rob", horario: "15:40", horarioFim: "16:40", hours: 3, value: 63, pay: "cash", mensal: false, workers: [] }
+          ]
+        },
+        outros: {
+          outros: [
+            { id: "out_1", name: "Morwenna", hours: 6, value: 125, pay: "cash", mensal: true, workers: [] },
+            { id: "out_2", name: "Valerie", hours: 4, value: 80, pay: "cash", mensal: true, workers: [] },
+            { id: "out_3", name: "Helen", hours: 4, value: 88, pay: "cash", mensal: true, workers: [] }
+          ]
+        }
+      }
+    };
+
+    let appData = exactListData;
+    let visitForm = { pet: false, criancas: false, quartos: 0, lavabo: 0, salas: 0, bathrooms: [{ type: 'Shower' }], piso: 'Piso' };
+
+    // Escutar mudanças no Firebase em TEMPO REAL
+    appDataRef.on('value', (snapshot) => {
+      const val = snapshot.val();
+      if (val) {
+        appData = val;
+        document.getElementById('sync-status').innerText = '🟢 Conectado em Tempo Real (Firebase)';
+      } else {
+        saveData();
+      }
+      renderAgenda();
+      renderTeamSummary();
+      renderFinancialSummary();
+      renderSavedVisits();
+    }, (error) => {
+      document.getElementById('sync-status').innerText = '🔴 Erro na ligação à nuvem';
+      console.error(error);
+    });
+
+    function saveData() {
+      appDataRef.set(appData);
+    }
+
+    function selectWeek(weekKey) {
+      appData.selectedWeekKey = weekKey;
+      document.querySelectorAll('.week-selector button').forEach(btn => btn.classList.remove('active'));
+      if (weekKey === 'semana1') document.getElementById('sub-sem1').classList.add('active');
+      if (weekKey === 'semana2') document.getElementById('sub-sem2').classList.add('active');
+      if (weekKey === 'outros') document.getElementById('sub-outros').classList.add('active');
+      saveData();
+      renderAgenda();
+      renderTeamSummary();
+      renderFinancialSummary();
+    }
+
+    function calculateEndTime(startTimeStr, totalHours, numPeople) {
+      if (!startTimeStr) return "";
+      let parts = startTimeStr.split(":");
+      if (parts.length < 2) return "";
+      
+      let startH = parseInt(parts[0]) || 0;
+      let startM = parseInt(parts[1]) || 0;
+
+      let people = numPeople > 0 ? numPeople : 1;
+      let actualDurationHours = (parseFloat(totalHours) || 0) / people;
+
+      let durationMinutes = Math.round(actualDurationHours * 60);
+
+      let totalStartMinutes = startH * 60 + startM + durationMinutes;
+      let endH = Math.floor(totalStartMinutes / 60) % 24;
+      let endM = totalStartMinutes % 60;
+
+      let pad = (n) => n.toString().padStart(2, '0');
+      return `${pad(endH)}:${pad(endM)}`;
+    }
+
+    function renderAgenda() {
+      const container = document.getElementById('days-container');
+      container.innerHTML = '';
+
+      const currentWeekObj = appData.weeks[appData.selectedWeekKey] || {};
+      const dayKeys = (appData.selectedWeekKey === 'outros') ? ["outros"] : ["segunda", "terca", "quarta", "quinta", "sexta"];
+
+      dayKeys.forEach(day => {
+        const clients = currentWeekObj[day] || [];
+        let totalHours = clients.reduce((acc, c) => acc + (parseFloat(c.hours) || 0), 0);
+        let totalValue = clients.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
+
+        let titleDisplay = (day === "outros") ? "Clientes Mensais / Outros" : day.charAt(0).toUpperCase() + day.slice(1) + "-feira";
+
+        let dayHtml = `
+          <div class="day-column">
+            <div class="day-header">
+              <span class="day-title">${titleDisplay}</span>
+              <span class="day-stats">${totalHours}h | £${totalValue.toFixed(2)}</span>
+            </div>
+        `;
+
+        clients.forEach((client, idx) => {
+          let numWorkers = (client.workers || []).length;
+          
+          let computedEnd = calculateEndTime(client.horario, client.hours, numWorkers);
+          if (computedEnd && (!client.horarioFim || client.autoTime !== false)) {
+            client.horarioFim = computedEnd;
+          }
+
+          let timePerPersonText = "";
+          if (numWorkers > 0) {
+            let hoursPerPerson = (parseFloat(client.hours) || 0) / numWorkers;
+            timePerPersonText = `➔ ${hoursPerPerson.toFixed(2)}h na casa (${numWorkers} ${numWorkers === 1 ? 'pessoa' : 'pessoas'})`;
+          }
+
+          dayHtml += `
+            <div class="card">
+              <div class="card-header">
+                <span class="client-name">${client.name}</span>
+                <div class="actions">
+                  <button class="btn-icon" onclick="moveClient('${day}', ${idx}, -1)">▲</button>
+                  <button class="btn-icon" onclick="moveClient('${day}', ${idx}, 1)">▼</button>
+                  <button class="btn-icon" onclick="deleteClient('${day}', ${idx})" style="color:#ef4444;">✕</button>
+                </div>
+              </div>
+
+              <div class="time-row">
+                <span>🕒 Entrada:</span>
+                <input type="text" class="time-input" value="${client.horario || ''}" placeholder="08:00" onchange="updateClientTime('${day}', ${idx}, 'horario', this.value)">
+                <span>Saída:</span>
+                <input type="text" class="time-input" value="${client.horarioFim || ''}" placeholder="10:30" onchange="updateClientTime('${day}', ${idx}, 'horarioFim', this.value)">
+              </div>
+
+              <div class="card-body">
+                <div>
+                  ⏱️ <input type="number" class="card-input-inline" value="${client.hours}" onchange="updateClientField('${day}', ${idx}, 'hours', this.value)"> h | 
+                  £ <input type="number" class="card-input-inline" value="${client.value}" onchange="updateClientField('${day}', ${idx}, 'value', this.value)">
+                </div>
+                <div>
+                  <span class="badge badge-${client.pay || 'cash'}" onclick="togglePayType('${day}', ${idx})">${client.pay || 'CASH'}</span>
+                  <span class="badge ${client.mensal ? 'badge-mensal' : ''}" style="${!client.mensal ? 'background:#334155; color:#94a3b8;' : ''}" onclick="toggleMensal('${day}', ${idx})">MENSAL</span>
+                </div>
+              </div>
+
+              ${timePerPersonText ? `<div class="time-per-person">${timePerPersonText}</div>` : ''}
+
+              <div class="workers-section">
+                <span style="color:var(--text-muted);">Trabalhou nesta casa:</span>
+                <div class="workers-list">
+                  ${appData.teamMembers.map(m => {
+                    const isAssigned = (client.workers || []).includes(m.name);
+                    const isOwnerClass = m.isOwner ? 'owner' : '';
+                    return `<span class="worker-chip ${isAssigned ? 'selected ' + isOwnerClass : ''}" onclick="toggleWorker('${day}',${idx}, '${m.name}')">${m.name}</span>`;
+                  }).join('')}
+                </div>
+              </div>
+            </div>
+          `;
+        });
+
+        dayHtml += `</div>`;
+        container.innerHTML += dayHtml;
+      });
+    }
+
+    function updateClientTime(day, idx, field, val) {
+      appData.weeks[appData.selectedWeekKey][day][idx][field] = val;
+      if (field === 'horarioFim') {
+        appData.weeks[appData.selectedWeekKey][day][idx].autoTime = false;
+      }
+      saveData();
+    }
+
+    function updateClientField(day, idx, field, val) {
+      appData.weeks[appData.selectedWeekKey][day][idx][field] = parseFloat(val) || 0;
+      saveData();
+    }
+
+    function togglePayType(day, idx) {
+      let current = appData.weeks[appData.selectedWeekKey][day][idx].pay || 'cash';
+      appData.weeks[appData.selectedWeekKey][day][idx].pay = (current === 'cash') ? 'transfer' : 'cash';
+      saveData();
+    }
+
+    function toggleMensal(day, idx) {
+      let current = appData.weeks[appData.selectedWeekKey][day][idx].mensal;
+      appData.weeks[appData.selectedWeekKey][day][idx].mensal = !current;
+      saveData();
+    }
+
+    function moveClient(day, index, direction) {
+      const list = appData.weeks[appData.selectedWeekKey][day];
+      const targetIndex = index + direction;
+      if (targetIndex < 0 || targetIndex >= list.length) return;
+
+      const temp = list[index];
+      list[index] = list[targetIndex];
+      list[targetIndex] = temp;
+
+      saveData();
+    }
+
+    function toggleWorker(day, clientIdx, workerName) {
+      const client = appData.weeks[appData.selectedWeekKey][day][clientIdx];
+      if (!client.workers) client.workers = [];
+      
+      const wIdx = client.workers.indexOf(workerName);
+      if (wIdx > -1) {
+        client.workers.splice(wIdx, 1);
+      } else {
+        client.workers.push(workerName);
+      }
+
+      saveData();
+    }
+
+    function deleteClient(day, idx) {
+      if (confirm("Deseja remover este cliente?")) {
+        appData.weeks[appData.selectedWeekKey][day].splice(idx, 1);
+        saveData();
+      }
+    }
+
+    function addNewClient() {
+      const name = prompt("Nome do Cliente:");
+      if (!name) return;
+      const day = prompt("Dia da semana (segunda, terca, quarta, quinta, sexta):", "segunda").toLowerCase();
+      const hours = prompt("Duração (horas):", "3");
+      const value = prompt("Valor (£):", "63");
+
+      if (appData.weeks[appData.selectedWeekKey][day]) {
+        appData.weeks[appData.selectedWeekKey][day].push({
+          id: Math.random().toString(36).substr(2, 7),
+          name: name,
+          horario: "08:00",
+          horarioFim: "",
+          hours: parseFloat(hours) || 0,
+          value: parseFloat(value) || 0,
+          pay: "cash",
+          workers: []
+        });
+        saveData();
+      }
+    }
+
+    function renderTeamSummary() {
+      const tbody = document.getElementById('team-summary-body');
+      tbody.innerHTML = '';
+
+      const currentWeekDays = appData.weeks[appData.selectedWeekKey] || {};
+      
+      let memberHoursMap = {};
+      let memberPayMap = {};
+
+      appData.teamMembers.forEach(m => {
+        memberHoursMap[m.name] = 0;
+        memberPayMap[m.name] = 0;
+      });
+
+      Object.keys(currentWeekDays).forEach(day => {
+        (currentWeekDays[day] || []).forEach(client => {
+          let assigned = client.workers || [];
+          if (assigned.length === 0) return;
+
+          let houseValue = parseFloat(client.value) || 0;
+          let totalHours = parseFloat(client.hours) || 0;
+
+          let normalWorkers = [];
+          let ownersAssigned = [];
+
+          assigned.forEach(wName => {
+            let mObj = appData.teamMembers.find(t => t.name === wName);
+            if (mObj && mObj.isOwner) ownersAssigned.push(wName);
+            else normalWorkers.push(wName);
+          });
+
+          let hoursPerPerson = totalHours / assigned.length;
+
+          let totalPaidToNormalWorkers = 0;
+          normalWorkers.forEach(wName => {
+            let mObj = appData.teamMembers.find(t => t.name === wName);
+            let payForThisHouse = hoursPerPerson * mObj.rate;
+            memberHoursMap[wName] += hoursPerPerson;
+            memberPayMap[wName] += payForThisHouse;
+            totalPaidToNormalWorkers += payForThisHouse;
+          });
+
+          let surplus = houseValue - totalPaidToNormalWorkers;
+
+          if (ownersAssigned.length > 0) {
+            let surplusPerOwner = surplus / ownersAssigned.length;
+            ownersAssigned.forEach(oName => {
+              memberHoursMap[oName] += hoursPerPerson;
+              memberPayMap[oName] += surplusPerOwner;
+            });
+          } else {
+            let surplusPerOwner = surplus / 2;
+            memberPayMap["Suzana"] += surplusPerOwner;
+            memberPayMap["Márcio"] += surplusPerOwner;
+          }
+        });
+      });
+
+      appData.teamMembers.forEach(member => {
+        let h = memberHoursMap[member.name] || 0;
+        let p = memberPayMap[member.name] || 0;
+        let rateDisplay = member.isOwner ? `<span style="color:var(--accent)">Excedente / Empresa</span>` : `£${member.rate.toFixed(2)}`;
+
+        tbody.innerHTML += `
+          <tr>
+            <td><strong>${member.name}</strong> ${member.isOwner ? '👑' : ''}</td>
+            <td>${rateDisplay}</td>
+            <td>${h.toFixed(2)}h</td>
+            <td><strong style="color:var(--primary)">£${p.toFixed(2)}</strong></td>
+          </tr>
+        `;
+      });
+    }
+
+    function renderFinancialSummary() {
+      const finDiv = document.getElementById('financial-summary');
+      const currentWeekDays = appData.weeks[appData.selectedWeekKey] || {};
+      
+      let totalCash = 0;
+      let totalTransfer = 0;
+
+      Object.keys(currentWeekDays).forEach(day => {
+        (currentWeekDays[day] || []).forEach(c => {
+          let val = parseFloat(c.value) || 0;
+          if (c.pay === 'transfer') totalTransfer += val;
+          else totalCash += val;
+        });
+      });
+
+      let totalGeral = totalCash + totalTransfer;
+
+      finDiv.innerHTML = `
+        <p>💵 <strong>Dinheiro (Cash):</strong> £${totalCash.toFixed(2)}</p>
+        <p>🏦 <strong>Transferência:</strong> £${totalTransfer.toFixed(2)}</p>
+        <hr style="border-color:var(--border-color); margin: 10px 0;">
+        <p style="font-size:16px; color:var(--primary);">💰 <strong>Faturamento Total:</strong> £${totalGeral.toFixed(2)}</p>
+      `;
+    }
+
+    /* VISITAS */
+    function setPet(val) {
+      visitForm.pet = val;
+      document.getElementById('btn-pet-sim').className = val ? 'toggle-btn active' : 'toggle-btn';
+      document.getElementById('btn-pet-nao').className = !val ? 'toggle-btn active' : 'toggle-btn';
+    }
+
+    function setCriancas(val) {
+      visitForm.criancas = val;
+      document.getElementById('btn-criancas-sim').className = val ? 'toggle-btn active' : 'toggle-btn';
+      document.getElementById('btn-criancas-nao').className = !val ? 'toggle-btn active' : 'toggle-btn';
+    }
+
+    function updateCounter(key, val) {
+      visitForm[key] = Math.max(0, visitForm[key] + val);
+      document.getElementById(`cnt-${key}`).innerText = visitForm[key];
+    }
+
+    function setPiso(val, btn) {
+      visitForm.piso = val;
+      document.querySelectorAll('#piso-toggle button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function renderBathrooms() {
+      const container = document.getElementById('bathrooms-container');
+      container.innerHTML = '';
+      visitForm.bathrooms.forEach((b, idx) => {
+        container.innerHTML += `
+          <div class="bathroom-row">
+            <span style="font-size:13px; font-weight:600;">Banheiro ${idx + 1}</span>
+            <div class="toggle-group" style="width: 180px;">
+              <button class="toggle-btn ${b.type === 'Shower' ? 'active' : ''}" onclick="setBathType(${idx}, 'Shower')">Shower</button>
+              <button class="toggle-btn ${b.type === 'Bath' ? 'active' : ''}" onclick="setBathType(${idx}, 'Bath')">Bath</button>
+            </div>
+            <button onclick="removeBathroom(${idx})" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-weight:bold;">✕</button>
+          </div>
+        `;
+      });
+    }
+
+    function addBathroom() {
+      if (visitForm.bathrooms.length < 5) {
+        visitForm.bathrooms.push({ type: 'Shower' });
+        renderBathrooms();
+      }
+    }
+
+    function removeBathroom(idx) {
+      visitForm.bathrooms.splice(idx, 1);
+      renderBathrooms();
+    }
+
+    function setBathType(idx, type) {
+      visitForm.bathrooms[idx].type = type;
+      renderBathrooms();
+    }
+
+    function calculateVisitTotal() {
+      const hrs = parseFloat(document.getElementById('v-tempo-comb').value) || 0;
+      const rate = parseFloat(document.getElementById('v-rate').value) || 0;
+      document.getElementById('lbl-horas-comb').innerText = hrs;
+      document.getElementById('lbl-total-visita').innerText = `£${(hrs * rate).toFixed(2)}`;
+    }
+
+    function clearVisitForm() {
+      document.getElementById('v-nome').value = '';
+      document.getElementById('v-endereco').value = '';
+      document.getElementById('v-prioridades').value = '';
+      document.getElementById('v-tempo-1').value = '';
+      document.getElementById('v-tempo-comb').value = '';
+      document.getElementById('v-rate').value = '';
+      visitForm = { pet: false, criancas: false, quartos: 0, lavabo: 0, salas: 0, bathrooms: [{ type: 'Shower' }], piso: 'Piso' };
+      setPet(false); setCriancas(false);
+      document.getElementById('cnt-quartos').innerText = 0;
+      document.getElementById('cnt-lavabo').innerText = 0;
+      document.getElementById('cnt-salas').innerText = 0;
+      renderBathrooms();
+      calculateVisitTotal();
+    }
+
+    function saveVisit() {
+      const nome = document.getElementById('v-nome').value;
+      if (!nome) { alert("Por favor, digite o nome do cliente."); return; }
+
+      const newVisit = {
+        id: Math.random().toString(36).substr(2, 7),
+        nome: nome,
+        endereco: document.getElementById('v-endereco').value,
+        prioridades: document.getElementById('v-prioridades').value,
+        pet: visitForm.pet,
+        criancas: visitForm.criancas,
+        quartos: visitForm.quartos,
+        lavabo: visitForm.lavabo,
+        salas: visitForm.salas,
+        bathrooms: visitForm.bathrooms,
+        piso: visitForm.piso,
+        tempo1: document.getElementById('v-tempo-1').value,
+        tempoComb: document.getElementById('v-tempo-comb').value,
+        rate: document.getElementById('v-rate').value,
+        total: (parseFloat(document.getElementById('v-tempo-comb').value) || 0) * (parseFloat(document.getElementById('v-rate').value) || 0)
+      };
+
+      if (!appData.visits) appData.visits = [];
+      appData.visits.push(newVisit);
+      saveData();
+      clearVisitForm();
+      alert("Visita salva com sucesso!");
+    }
+
+    function renderSavedVisits() {
+      const container = document.getElementById('saved-visits-list');
+      container.innerHTML = '';
+      if (!appData.visits || appData.visits.length === 0) {
+        container.innerHTML = `<p style="color:var(--text-muted); font-size:13px;">Nenhuma visita guardada.</p>`;
+        return;
+      }
+
+      appData.visits.forEach((v, idx) => {
+        container.innerHTML += `
+          <div class="card" style="margin-bottom:12px;">
+            <div class="card-header">
+              <span class="client-name">${v.nome}</span>
+              <button onclick="deleteVisit(${idx})" style="background:none; border:none; color:#ef4444; font-size:12px; cursor:pointer; font-weight:600;">Remover</button>
+            </div>
+            <div style="font-size:13px; color:var(--text-muted); line-height:1.6;">
+              <p>📍 <strong>Endereço:</strong> ${v.endereco || 'N/A'}</p>
+              <p>📌 <strong>Prioridades:</strong> ${v.prioridades || 'N/A'}</p>
+              <p>🐾 Pet: ${v.pet ? 'Sim' : 'Não'} | 👶 Crianças: ${v.criancas ? 'Sim' : 'Não'}</p>
+              <p>🛏️ Quartos: ${v.quartos} | 🚪 Lavabo: ${v.lavabo} | 🛋️ Salas: ${v.salas} | 🚿 Banheiros: ${v.bathrooms ? v.bathrooms.length : 0}</p>
+              <p>🪵 Piso: ${v.piso} | ⏱️ Combinado: ${v.tempoComb}h | 💰 Total: £${(v.total || 0).toFixed(2)}</p>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function deleteVisit(idx) {
+      if (confirm("Remover esta visita guardada?")) {
+        appData.visits.splice(idx, 1);
+        saveData();
+      }
+    }
+
+    function switchTab(tab) {
+      ['agenda', 'equipe', 'visitas', 'financeiro', 'backup'].forEach(t => {
+        const el = document.getElementById(`tab-${t}`);
+        if (el) el.style.display = (t === tab) ? 'block' : 'none';
+      });
+
+      document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+
+    function exportJSON() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "sm_cleaners_backup.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function resetToInitialData() {
+      if (confirm("Tem certeza que deseja restaurar a lista inicial no Firebase?")) {
+        appData = exactListData;
+        saveData();
+      }
+    }
+
+    renderBathrooms();
+  </script>
+</body>
+</html>
