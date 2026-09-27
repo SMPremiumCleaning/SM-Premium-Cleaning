@@ -892,7 +892,7 @@
     }
 
     function exportarBackupJSON() {
-  const data = localStorage.getItem('cleaning_app_data') || '{}';
+  const data = localStorage.getItem('appData') || localStorage.getItem('cleaning_app_data') || JSON.stringify(window.appData || {});
   const blob = new Blob([data], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
