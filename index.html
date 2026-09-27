@@ -270,12 +270,17 @@
 
   <!-- ABA BACKUP -->
   <div id="tab-backup" style="display:none;">
-    <div class="section-box">
-      <h3 style="color: var(--primary); margin-bottom: 12px;">Gerenciamento de Dados</h3>
-      <button class="btn" onclick="exportJSON()" style="margin-right: 10px;">Exportar Dados (JSON)</button>
-      <button class="btn" onclick="resetToInitialData()" style="background: #ef4444; border:none;">Restaurar Lista Inicial</button>
+  <div class="card">
+    <h3>Gerenciamento de Dados</h3>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+      <button onclick="exportarBackupJSON()" class="btn-primary">Salvar Backup (JSON)</button>
+      <label class="btn-secondary" style="cursor: pointer; padding: 10px 15px; background: #4a5568; color: white; border-radius: 6px; display: inline-block;">
+        Carregar Ficheiro JSON
+        <input type="file" id="importFile" accept=".json" onchange="importarBackupJSON(event)" style="display: none;">
+      </label>
     </div>
   </div>
+</div>
 
   <script>
     // CONFIGURAÇÃO DO FIREBASE
@@ -886,22 +891,38 @@
       event.target.classList.add('active');
     }
 
-    function exportJSON() {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", "sm_cleaners_backup.json");
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-    }
+    function exportarBackupJSON() {
+  const data = localStorage.getItem('cleaning_app_data') || '{}';
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `backup_agenda_${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
 
-    function resetToInitialData() {
-      if (confirm("Tem certeza que deseja restaurar a lista inicial no Firebase?")) {
-        appData = exactListData;
-        saveData();
+function importarBackupJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      localStorage.setItem('cleaning_app_data', JSON.stringify(data));
+      if (typeof dbRef !== 'undefined' && dbRef) {
+        dbRef.set(data);
       }
+      alert('Backup restaurado com sucesso!');
+      location.reload();
+    } catch (err) {
+      alert('Erro ao ler o ficheiro de backup.');
     }
+  };
+  reader.readAsText(file);
+}
+
 
     renderBathrooms();
   </script>
