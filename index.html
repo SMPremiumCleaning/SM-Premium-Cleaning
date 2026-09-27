@@ -892,8 +892,19 @@
     }
 
     function exportarBackupJSON() {
-  const data = localStorage.getItem('appData') || localStorage.getItem('cleaning_app_data') || JSON.stringify(window.appData || {});
-  const blob = new Blob([data], { type: 'application/json' });
+  let backupData = {};
+  
+  if (typeof appData !== 'undefined' && appData) {
+    backupData = appData;
+  } else {
+    const local = localStorage.getItem('appData') || localStorage.getItem('cleaning_app_data');
+    if (local) {
+      try { backupData = JSON.parse(local); } catch(e) {}
+    }
+  }
+
+  const dataStr = JSON.stringify(backupData, null, 2);
+  const blob = new Blob([dataStr], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -903,6 +914,7 @@
   document.body.removeChild(a);
 }
 
+
 function importarBackupJSON(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -910,6 +922,10 @@ function importarBackupJSON(event) {
   reader.onload = function(e) {
     try {
       const data = JSON.parse(e.target.result);
+      if (typeof appData !== 'undefined') {
+        appData = data;
+      }
+      localStorage.setItem('appData', JSON.stringify(data));
       localStorage.setItem('cleaning_app_data', JSON.stringify(data));
       if (typeof dbRef !== 'undefined' && dbRef) {
         dbRef.set(data);
