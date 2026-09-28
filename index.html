@@ -270,17 +270,18 @@
 
   <!-- ABA BACKUP -->
   <div id="tab-backup" style="display:none;">
-  <div class="card">
-    <h3>Gerenciamento de Dados</h3>
-    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-      <button onclick="exportarBackupJSON()" class="btn-primary">Salvar Backup (JSON)</button>
-      <label class="btn-secondary" style="cursor: pointer; padding: 10px 15px; background: #4a5568; color: white; border-radius: 6px; display: inline-block;">
-        Carregar Ficheiro JSON
-        <input type="file" id="importFile" accept=".json" onchange="importarBackupJSON(event)" style="display: none;">
-      </label>
+    <div class="section-box">
+      <h3 style="color: var(--primary); margin-bottom: 12px;">Gerenciamento de Dados</h3>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">Guarde ou restaure a sua agenda inteira em ficheiro JSON para evitar perdas de memória no Safari.</p>
+      <div style="display: flex; gap: 10px; flex-direction: column;">
+        <button onclick="exportarBackupJSON()" class="btn btn-primary">Salvar Backup (JSON)</button>
+        <label class="btn" style="cursor: pointer; text-align: center; padding: 12px; background: #334155; color: white; border-radius: 8px; font-size: 15px; font-weight: 700;">
+          Carregar Ficheiro JSON
+          <input type="file" id="importFile" accept=".json" onchange="importarBackupJSON(event)" style="display: none;">
+        </label>
+      </div>
     </div>
   </div>
-</div>
 
   <script>
     // CONFIGURAÇÃO DO FIREBASE
@@ -414,29 +415,42 @@
       }
     };
 
-    let appData = exactListData;
+    // Carrega primeiro do localStorage local para ter resposta instantânea
+    let localSaved = localStorage.getItem('sm_cleaners_app_data') || localStorage.getItem('appData');
+    let appData = localSaved ? JSON.parse(localSaved) : exactListData;
+
     let visitForm = { pet: false, criancas: false, quartos: 0, lavabo: 0, salas: 0, bathrooms: [{ type: 'Shower' }], piso: 'Piso' };
 
     // Escutar mudanças no Firebase em TEMPO REAL
     appDataRef.on('value', (snapshot) => {
       const val = snapshot.val();
-      if (val) {
+      if (val && Object.keys(val).length > 0) {
         appData = val;
+        localStorage.setItem('sm_cleaners_app_data', JSON.stringify(appData));
+        localStorage.setItem('appData', JSON.stringify(appData));
         document.getElementById('sync-status').innerText = '🟢 Conectado em Tempo Real (Firebase)';
       } else {
         saveData();
       }
-      renderAgenda();
-      renderTeamSummary();
-      renderFinancialSummary();
-      renderSavedVisits();
+      renderAll();
     }, (error) => {
-      document.getElementById('sync-status').innerText = '🔴 Erro na ligação à nuvem';
+      document.getElementById('sync-status').innerText = '🟡 Modo Offline (Salvo Localmente)';
       console.error(error);
     });
 
     function saveData() {
-      appDataRef.set(appData);
+      localStorage.setItem('sm_cleaners_app_data', JSON.stringify(appData));
+      localStorage.setItem('appData', JSON.stringify(appData));
+      if (typeof appDataRef !== 'undefined' && appDataRef) {
+        appDataRef.set(appData);
+      }
+    }
+
+    function renderAll() {
+      renderAgenda();
+      renderTeamSummary();
+      renderFinancialSummary();
+      renderSavedVisits();
     }
 
     function selectWeek(weekKey) {
@@ -446,9 +460,7 @@
       if (weekKey === 'semana2') document.getElementById('sub-sem2').classList.add('active');
       if (weekKey === 'outros') document.getElementById('sub-outros').classList.add('active');
       saveData();
-      renderAgenda();
-      renderTeamSummary();
-      renderFinancialSummary();
+      renderAll();
     }
 
     function calculateEndTime(startTimeStr, totalHours, numPeople) {
@@ -564,23 +576,27 @@
         appData.weeks[appData.selectedWeekKey][day][idx].autoTime = false;
       }
       saveData();
+      renderAll();
     }
 
     function updateClientField(day, idx, field, val) {
       appData.weeks[appData.selectedWeekKey][day][idx][field] = parseFloat(val) || 0;
       saveData();
+      renderAll();
     }
 
     function togglePayType(day, idx) {
       let current = appData.weeks[appData.selectedWeekKey][day][idx].pay || 'cash';
       appData.weeks[appData.selectedWeekKey][day][idx].pay = (current === 'cash') ? 'transfer' : 'cash';
       saveData();
+      renderAll();
     }
 
     function toggleMensal(day, idx) {
       let current = appData.weeks[appData.selectedWeekKey][day][idx].mensal;
       appData.weeks[appData.selectedWeekKey][day][idx].mensal = !current;
       saveData();
+      renderAll();
     }
 
     function moveClient(day, index, direction) {
@@ -593,6 +609,7 @@
       list[targetIndex] = temp;
 
       saveData();
+      renderAll();
     }
 
     function toggleWorker(day, clientIdx, workerName) {
@@ -607,12 +624,14 @@
       }
 
       saveData();
+      renderAll();
     }
 
     function deleteClient(day, idx) {
       if (confirm("Deseja remover este cliente?")) {
         appData.weeks[appData.selectedWeekKey][day].splice(idx, 1);
         saveData();
+        renderAll();
       }
     }
 
@@ -635,6 +654,7 @@
           workers: []
         });
         saveData();
+        renderAll();
       }
     }
 
@@ -844,6 +864,7 @@
       appData.visits.push(newVisit);
       saveData();
       clearVisitForm();
+      renderAll();
       alert("Visita salva com sucesso!");
     }
 
@@ -878,6 +899,7 @@
       if (confirm("Remover esta visita guardada?")) {
         appData.visits.splice(idx, 1);
         saveData();
+        renderAll();
       }
     }
 
@@ -891,54 +913,47 @@
       event.target.classList.add('active');
     }
 
+    /* BACKUP / RESTAURAÇÃO COMPATÍVEL COM SAFARI & FIREBASE */
     function exportarBackupJSON() {
-  let backupData = {};
-  
-  if (typeof appData !== 'undefined' && appData) {
-    backupData = appData;
-  } else {
-    const local = localStorage.getItem('appData') || localStorage.getItem('cleaning_app_data');
-    if (local) {
-      try { backupData = JSON.parse(local); } catch(e) {}
+      let backupData = appData || {};
+
+      const dataStr = JSON.stringify(backupData, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup_agenda_${new Date().toISOString().slice(0,10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     }
-  }
 
-  const dataStr = JSON.stringify(backupData, null, 2);
-  const blob = new Blob([dataStr], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `backup_agenda_${new Date().toISOString().slice(0,10)}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
+    function importarBackupJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = JSON.parse(e.target.result);
 
+          if (!data || !data.weeks) {
+            alert('Ficheiro de backup inválido.');
+            return;
+          }
 
-function importarBackupJSON(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const data = JSON.parse(e.target.result);
-      if (typeof appData !== 'undefined') {
-        appData = data;
-      }
-      localStorage.setItem('appData', JSON.stringify(data));
-      localStorage.setItem('cleaning_app_data', JSON.stringify(data));
-      if (typeof dbRef !== 'undefined' && dbRef) {
-        dbRef.set(data);
-      }
-      alert('Backup restaurado com sucesso!');
-      location.reload();
-    } catch (err) {
-      alert('Erro ao ler o ficheiro de backup.');
+          appData = data;
+          saveData();
+          renderAll();
+
+          alert('Backup restaurado e sincronizado com sucesso!');
+          setTimeout(() => { location.reload(); }, 300);
+
+        } catch (err) {
+          alert('Erro ao carregar ficheiro: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
     }
-  };
-  reader.readAsText(file);
-}
-
 
     renderBathrooms();
   </script>
