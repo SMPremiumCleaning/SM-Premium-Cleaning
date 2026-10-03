@@ -48,7 +48,8 @@
 
     .card { background: #0f172a; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-bottom: 10px; }
     .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-    .client-name { font-weight: 700; font-size: 16px; color: #fff; }
+    .client-name { font-weight: 700; font-size: 16px; color: #fff; text-decoration: none; display: flex; align-items: center; gap: 5px; cursor: pointer; }
+    .client-name:hover { color: var(--primary); }
     .actions { display: flex; gap: 4px; }
     .btn-icon { border: 1px solid var(--border-color); background: #1e293b; cursor: pointer; font-size: 11px; color: var(--text-muted); width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
 
@@ -311,6 +312,69 @@
       semana2: { segunda: "05/10", terca: "06/10", quarta: "07/10", quinta: "08/10", sexta: "09/10" }
     };
 
+    // Dicionário com os Endereços dos Clientes para abrir no Apple Maps / Google Maps
+    const clientAddresses = {
+      "Bernadette": "York Place, BA15PU",
+      "Bushra": "29 Meadow Park, Batheaston",
+      "Jessica": "2 Rowlands Close, Bathford",
+      "Katrina": "110 High Street, Bathford",
+      "Rachel Nova": "19 Loves lane, Trowbridge",
+      "Rachel Fazendinha": "The walled gardens, Bradford on Avon",
+      "Jeanette": "25 Greenland Mills, Bradford on Avon",
+      "Rhiannon": "4 The Copse, Batheaston",
+      "Sasha": "High Street, Bathampton",
+      "Phoebe": "4 Kennet Park, Bathampton",
+      "Georgie": "Mount Pleasant, High Street, Bathampton",
+      "Rod": "63 Holcombe Close, Bathampton",
+      "Lindsay": "57 Holcombe Close",
+      "Caroline": "3 Sladesbrook Close, Bradford on Avon",
+      "Tom": "19 St Laurence Road, Bradford on Avon",
+      "Ella": "142 Bath Road, Bradford on Avon",
+      "Jo": "6 Dunsford Place, Bathwick",
+      "Katie Claverton": "9A The Glebe House, Claverton Down",
+      "Angie": "20 Royal Crescent",
+      "Jaime": "Colworth, The Avenue",
+      "Katherine": "15 Crowe hill",
+      "Anne Marie": "36 Hampton View, Bath",
+      "Emma": "Woodcote, Bathampton Lane, Bathampton",
+      "Gemma": "5 Wallace Road",
+      "Ian": "Orchard-Lea, Compton Dando",
+      "Anne": "Sarat, Compton Dando",
+      "Lynne": "Whispers, Hunstrete Lane",
+      "Arabee": "18 St James Square, Bath",
+      "Laura": "4 Dunsford Place",
+      "Julia": "29 Midford Lane",
+      "Pippa": "The Coach House, BA14AS",
+      "Chris": "32 Rockliffe Road",
+      "Tim": "7 Porlock Road",
+      "Rob": "4 Fox Hill, Bath",
+      "James": "3 Rockliffe Road",
+      "Jacqueline": "19 Coppice Hill, Bradford on Avon",
+      "Carol": "14 Woolley Terrace, Bradford on Avon",
+      "Brent": "61 Holcombe Close, Bathampton",
+      "Vanya": "9 Kennet Park, Bathampton",
+      "Sarah": "44 Salisbury Road",
+      "Rachel Porquinho": "131 Penn Hill Road, Bath",
+      "Lucia": "25 Winchester Road, Bath",
+      "Sean": "53 Wellsway, Bath",
+      "Jane": "3 Dunsford Place, Bathwick",
+      "Susie": "50 Midsummer Buildings, Bath",
+      "Morwenna": "12 Avoncliff Square, Avoncliff",
+      "Valerie": "8 Eden Park Close, Batheaston"
+    };
+
+    function openMaps(clientName) {
+      const address = clientAddresses[clientName];
+      if (address) {
+        const encodedAddress = encodeURIComponent(address);
+        // Tenta abrir direto no Apple Maps no iPhone / Mac ou no Google Maps em outros dispositivos
+        const mapsUrl = `https://maps.apple.com/?q=${encodedAddress}`;
+        window.open(mapsUrl, '_blank');
+      } else {
+        alert(`Endereço de ${clientName} não encontrado.`);
+      }
+    }
+
     const exactListData = {
       selectedWeekKey: "semana2",
       teamMembers: [
@@ -434,11 +498,9 @@
         let totalHours = clients.reduce((acc, c) => acc + (parseFloat(c.hours) || 0), 0);
         let totalValue = clients.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
 
-        // Formatação do Título com Data
         let dateStr = (dateMap[appData.selectedWeekKey] && dateMap[appData.selectedWeekKey][day]) ? ` (${dateMap[appData.selectedWeekKey][day]})` : '';
         let titleDisplay = (day === "outros") ? "Clientes Mensais / Outros" : day.charAt(0).toUpperCase() + day.slice(1) + "-feira" + dateStr;
 
-        // Cálculo do Total de Horas por Funcionário no Dia
         let workerHoursDay = {};
         clients.forEach(c => {
           let assigned = c.workers || [];
@@ -478,7 +540,9 @@
           dayHtml += `
             <div class="card">
               <div class="card-header">
-                <span class="client-name">${client.name}</span>
+                <a class="client-name" onclick="openMaps('${client.name}')" title="Clique para abrir no Maps">
+                  📍 ${client.name}
+                </a>
                 <div class="actions">
                   <button class="btn-icon" onclick="moveClient('${day}', ${idx}, -1)">▲</button>
                   <button class="btn-icon" onclick="moveClient('${day}', ${idx}, 1)">▼</button>
@@ -495,7 +559,7 @@
 
               <div class="card-body">
                 <div>
-                  ⏱️ <input type="number" class="card-input-inline" value="${client.hours}" onchange="updateClientField('${day}', ${idx}, 'hours', this.value)"> h | 
+                  ⏱️️ <input type="number" class="card-input-inline" value="${client.hours}" onchange="updateClientField('${day}', ${idx}, 'hours', this.value)"> h | 
                   £ <input type="number" class="card-input-inline" value="${client.value}" onchange="updateClientField('${day}', ${idx}, 'value', this.value)">
                 </div>
                 <div>
