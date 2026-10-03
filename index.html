@@ -78,8 +78,25 @@
     .team-table th { background: #0f172a; color: var(--primary); }
 
     .section-box { background: #1e293b; border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-
     .pay-cycle-box { background: #1e3a5f; border: 1px solid var(--primary); border-radius: 12px; padding: 14px; margin-bottom: 16px; }
+
+    /* FORMULÁRIO DE VISITAS RESTAURADO */
+    .form-group { margin-bottom: 14px; }
+    .form-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; display: block; letter-spacing: 0.5px; }
+    .form-input, .form-textarea { width: 100%; padding: 10px; background: #0f172a; border: 1px solid var(--border-color); border-radius: 6px; color: #fff; font-size: 14px; }
+    .form-row { display: flex; gap: 12px; margin-bottom: 14px; }
+    .form-col { flex: 1; }
+
+    .toggle-group { display: flex; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; }
+    .toggle-btn { flex: 1; padding: 8px; background: #0f172a; color: var(--text-muted); border: none; cursor: pointer; font-weight: 600; font-size: 13px; text-align: center; }
+    .toggle-btn.active { background: #1e3a5f; color: #38bdf8; font-weight: 700; }
+
+    .counter-box { display: flex; align-items: center; justify-content: space-between; background: #0f172a; border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 8px; }
+    .counter-btn { width: 28px; height: 28px; background: #1e293b; border: 1px solid var(--border-color); color: #fff; font-size: 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+
+    .bathroom-row { display: flex; align-items: center; justify-content: space-between; background: #0f172a; border: 1px solid var(--border-color); padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; }
+    .btn-add-sub { width: 100%; padding: 8px; background: transparent; border: 1px dashed var(--border-color); color: var(--primary); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
+    .calc-row { display: flex; align-items: center; gap: 10px; background: #0f172a; padding: 12px; border-radius: 6px; border: 1px solid var(--border-color); margin-top: 10px; }
 
     .fin-day-card { background: #0f172a; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
     .fin-day-title { font-weight: bold; color: var(--primary); font-size: 14px; margin-bottom: 4px; }
@@ -131,9 +148,9 @@
 
   <!-- ABA EQUIPE -->
   <div id="tab-equipe" style="display:none;">
-    <!-- 1. BLOCO FECHAMENTO DE FOLHA (SEXTA ANTERIOR ATÉ QUINTA ATUAL) -->
+    <!-- 1. BLOCO DE CORTE DE PAGAMENTO (SEXTA ANTERIOR ATÉ QUINTA ATUAL) -->
     <div class="pay-cycle-box">
-      <h3 style="color: var(--primary); margin-bottom: 6px; font-size: 16px;">💳 Fechamento para Pagamento na Sexta-feira</h3>
+      <h3 style="color: var(--primary); margin-bottom: 6px; font-size: 16px;">💳 Fechamento da Folha (Pagamento de Sexta)</h3>
       <p id="pay-cycle-dates-label" style="font-size: 12px; color: #e2e8f0; margin-bottom: 12px;">Corte: Sexta anterior até Quinta-feira atual</p>
       
       <table class="team-table" style="background: #0f172a; border-radius: 8px;">
@@ -142,14 +159,14 @@
             <th>Funcionário</th>
             <th>Taxa (£/h)</th>
             <th>Horas a Pagar</th>
-            <th>Total a Pagar Sexta (£)</th>
+            <th>Total a Pagar (£)</th>
           </tr>
         </thead>
         <tbody id="team-pay-cycle-body"></tbody>
       </table>
     </div>
 
-    <!-- 2. VISÃO DA SEMANA CORRENTE (SEGUNDA A SEXTA) -->
+    <!-- 2. PRODUÇÃO DA SEMANA CORRENTE (SEGUNDA A SEXTA) -->
     <div class="section-box">
       <h3 style="color: var(--text-main); margin-bottom: 12px; font-size: 15px;">📊 Produção da Semana Selecionada (Segunda a Sexta)</h3>
       <table class="team-table">
@@ -166,7 +183,7 @@
     </div>
   </div>
 
-  <!-- ABA VISITAS -->
+  <!-- ABA VISITAS RESTAURADA COMPLETA -->
   <div id="tab-visitas" style="display:none;">
     <div class="section-box" style="position: relative;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
@@ -190,10 +207,84 @@
         <textarea id="v-prioridades" class="form-textarea" rows="2" placeholder="O que o cliente pediu pra priorizar..."></textarea>
       </div>
 
+      <div class="form-row">
+        <div class="form-col">
+          <label class="form-label">TEM PET?</label>
+          <div class="toggle-group">
+            <button id="btn-pet-sim" class="toggle-btn" onclick="setPet(true)">Sim</button>
+            <button id="btn-pet-nao" class="toggle-btn active" onclick="setPet(false)">Não</button>
+          </div>
+        </div>
+        <div class="form-col">
+          <label class="form-label">TEM CRIANÇAS?</label>
+          <div class="toggle-group">
+            <button id="btn-criancas-sim" class="toggle-btn" onclick="setCriancas(true)">Sim</button>
+            <button id="btn-criancas-nao" class="toggle-btn active" onclick="setCriancas(false)">Não</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-col">
+          <label class="form-label">QUARTOS</label>
+          <div class="counter-box">
+            <button class="counter-btn" onclick="updateCounter('quartos', -1)">-</button>
+            <span id="cnt-quartos" style="font-weight: bold;">0</span>
+            <button class="counter-btn" onclick="updateCounter('quartos', 1)">+</button>
+          </div>
+        </div>
+        <div class="form-col">
+          <label class="form-label">LAVABO</label>
+          <div class="counter-box">
+            <button class="counter-btn" onclick="updateCounter('lavabo', -1)">-</button>
+            <span id="cnt-lavabo" style="font-weight: bold;">0</span>
+            <button class="counter-btn" onclick="updateCounter('lavabo', 1)">+</button>
+          </div>
+        </div>
+        <div class="form-col">
+          <label class="form-label">SALAS</label>
+          <div class="counter-box">
+            <button class="counter-btn" onclick="updateCounter('salas', -1)">-</button>
+            <span id="cnt-salas" style="font-weight: bold;">0</span>
+            <button class="counter-btn" onclick="updateCounter('salas', 1)">+</button>
+          </div>
+        </div>
+      </div>
+
       <div class="form-group">
         <label class="form-label">BANHEIROS (MÁX. 5)</label>
         <div id="bathrooms-container"></div>
         <button class="btn-add-sub" onclick="addBathroom()">+ adicionar banheiro</button>
+      </div>
+
+      <div class="form-group" style="margin-top: 14px;">
+        <label class="form-label">PISO</label>
+        <div class="toggle-group" id="piso-toggle">
+          <button class="toggle-btn active" onclick="setPiso('Piso', this)">Piso</button>
+          <button class="toggle-btn" onclick="setPiso('Carpet', this)">Carpet</button>
+          <button class="toggle-btn" onclick="setPiso('Madeira', this)">Madeira</button>
+          <button class="toggle-btn" onclick="setPiso('Misto', this)">Misto</button>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-col">
+          <label class="form-label">TEMPO ESTIMADO (1ª LIMPEZA)</label>
+          <input type="text" id="v-tempo-1" class="form-input" placeholder="ex: 5h">
+        </div>
+        <div class="form-col">
+          <label class="form-label">TEMPO COMBINADO (RECORRENTE)</label>
+          <input type="number" id="v-tempo-comb" class="form-input" placeholder="ex: 3" oninput="calculateVisitTotal()">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">VALOR POR HORA × TOTAL (LIGADOS)</label>
+        <div class="calc-row">
+          <input type="number" id="v-rate" class="form-input" style="width: 80px;" placeholder="£/HORA" oninput="calculateVisitTotal()">
+          <span style="color:var(--text-muted);">× <span id="lbl-horas-comb">0</span> =</span>
+          <strong style="font-size: 18px; color: var(--primary);" id="lbl-total-visita">£0.00</strong>
+        </div>
       </div>
 
       <button class="btn btn-primary" onclick="saveVisit()" style="margin-top: 15px;">Salvar Visita</button>
@@ -258,6 +349,7 @@
     const baseSemana1Start = new Date(2026, 8, 28); // 28/09/2026
 
     const fixedMensalClients = ["Bernadette", "Bushra"];
+    let visitForm = { pet: false, criancas: false, quartos: 0, lavabo: 0, salas: 0, bathrooms: [{ type: 'Shower' }], piso: 'Piso' };
 
     const clientAddresses = {
       "Bernadette": "York Place, BA15PU",
@@ -311,28 +403,21 @@
 
     function openMaps(clientName) {
       const address = clientAddresses[clientName];
-      if (address) {
-        window.open(`https://maps.apple.com/?q=${encodeURIComponent(address)}`, '_blank');
-      } else {
-        alert(`Endereço de ${clientName} não encontrado.`);
-      }
+      if (address) window.open(`https://maps.apple.com/?q=${encodeURIComponent(address)}`, '_blank');
+      else alert(`Endereço de ${clientName} não encontrado.`);
     }
 
     function getCalculatedDate(weekKey, dayName, offset = 0) {
       let base = new Date(baseSemana1Start);
       let dayAdd = 0;
-
       const dayOffsetMap = { segunda: 0, terca: 1, quarta: 2, quinta: 3, sexta: 4 };
       if (dayOffsetMap[dayName] !== undefined) dayAdd = dayOffsetMap[dayName];
-
       if (weekKey === 'semana2') dayAdd += 7;
 
       base.setDate(base.getDate() + dayAdd + (offset * 7));
-
       let yyyy = base.getFullYear();
       let mm = String(base.getMonth() + 1).padStart(2, '0');
       let dd = String(base.getDate()).padStart(2, '0');
-
       return { ISO: `${yyyy}-${mm}-${dd}`, formatted: `${dd}/${mm}/${yyyy}` };
     }
 
@@ -625,7 +710,7 @@
       const summaryBody = document.getElementById('team-summary-body');
       payBody.innerHTML = ''; summaryBody.innerHTML = '';
 
-      // 1. CÁLCULO DO CICLO DE CORTE PARA PAGAMENTO (SEXTA DA SEMANA ANTERIOR A QUINTA DA SEMANA ATUAL)
+      // CÁLCULO DINÂMICO DE CORTE (SEXTA DA SEMANA ANTERIOR A QUINTA DA SEMANA ATUAL)
       let prevWeekKey = (appData.selectedWeekKey === 'semana2') ? 'semana1' : 'semana2';
       let prevOffset = (appData.selectedWeekKey === 'semana1') ? currentWeekOffset - 1 : currentWeekOffset;
 
@@ -639,7 +724,6 @@
 
       appData.teamMembers.forEach(m => { payCycleHours[m.name] = 0; payCycleValues[m.name] = 0; });
 
-      // Função auxiliar para somar horas de um dia específico
       function addHoursForDay(wKey, dKey) {
         let clients = (appData.weeks[wKey] && appData.weeks[wKey][dKey]) ? appData.weeks[wKey][dKey] : [];
         clients.forEach(client => {
@@ -663,8 +747,8 @@
           normalWorkers.forEach(wName => {
             let mObj = appData.teamMembers.find(t => t.name === wName);
             let payForThisHouse = hoursPerPerson * mObj.rate;
-            payCycleHours[wName] += hoursPerPerson;
-            payCycleValues[wName] += payForThisHouse;
+            payCycleHours[wName] = (payCycleHours[wName] || 0) + hoursPerPerson;
+            payCycleValues[wName] = (payCycleValues[wName] || 0) + payForThisHouse;
             totalPaidToNormalWorkers += payForThisHouse;
           });
 
@@ -673,20 +757,19 @@
           if (ownersAssigned.length > 0) {
             let surplusPerOwner = surplus / ownersAssigned.length;
             ownersAssigned.forEach(oName => {
-              payCycleHours[oName] += hoursPerPerson;
-              payCycleValues[oName] += surplusPerOwner;
+              payCycleHours[oName] = (payCycleHours[oName] || 0) + hoursPerPerson;
+              payCycleValues[oName] = (payCycleValues[oName] || 0) + surplusPerOwner;
             });
           } else {
             let surplusPerOwner = surplus / 2;
-            payCycleValues["Suzana"] += surplusPerOwner;
-            payCycleValues["Márcio"] += surplusPerOwner;
+            payCycleValues["Suzana"] = (payCycleValues["Suzana"] || 0) + surplusPerOwner;
+            payCycleValues["Márcio"] = (payCycleValues["Márcio"] || 0) + surplusPerOwner;
           }
         });
       }
 
-      // Adiciona Sexta-feira da semana passada
+      // Soma dinâmica: Sexta da semana anterior + Segunda a Quinta da semana atual
       addHoursForDay(prevWeekKey, 'sexta');
-      // Adiciona Segunda a Quinta da semana corrente
       ['segunda', 'terca', 'quarta', 'quinta'].forEach(d => addHoursForDay(appData.selectedWeekKey, d));
 
       appData.teamMembers.forEach(member => {
@@ -702,7 +785,7 @@
         `;
       });
 
-      // 2. CÁLCULO DA SEMANA SELECIONADA CORRENTE (SEGUNDA A SEXTA COMPLETA)
+      // PRODUÇÃO DA SEMANA CORRENTE (SEGUNDA A SEXTA)
       let currentWeekDays = appData.weeks[appData.selectedWeekKey] || {};
       let memberHoursMap = {};
       let memberPayMap = {};
@@ -926,6 +1009,152 @@
       });
     }
 
+    /* LÓGICA DA ABA DE VISITAS RESTAURADA */
+    function setPet(val) {
+      visitForm.pet = val;
+      document.getElementById('btn-pet-sim').className = val ? 'toggle-btn active' : 'toggle-btn';
+      document.getElementById('btn-pet-nao').className = !val ? 'toggle-btn active' : 'toggle-btn';
+    }
+
+    function setCriancas(val) {
+      visitForm.criancas = val;
+      document.getElementById('btn-criancas-sim').className = val ? 'toggle-btn active' : 'toggle-btn';
+      document.getElementById('btn-criancas-nao').className = !val ? 'toggle-btn active' : 'toggle-btn';
+    }
+
+    function updateCounter(key, val) {
+      visitForm[key] = Math.max(0, visitForm[key] + val);
+      document.getElementById(`cnt-${key}`).innerText = visitForm[key];
+    }
+
+    function setPiso(val, btn) {
+      visitForm.piso = val;
+      document.querySelectorAll('#piso-toggle button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function renderBathrooms() {
+      const container = document.getElementById('bathrooms-container');
+      container.innerHTML = '';
+      visitForm.bathrooms.forEach((b, idx) => {
+        container.innerHTML += `
+          <div class="bathroom-row">
+            <span style="font-size:13px; font-weight:600;">Banheiro ${idx + 1}</span>
+            <div class="toggle-group" style="width: 180px;">
+              <button class="toggle-btn ${b.type === 'Shower' ? 'active' : ''}" onclick="setBathType(${idx}, 'Shower')">Shower</button>
+              <button class="toggle-btn ${b.type === 'Bath' ? 'active' : ''}" onclick="setBathType(${idx}, 'Bath')">Bath</button>
+            </div>
+            <button onclick="removeBathroom(${idx})" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-weight:bold;">✕</button>
+          </div>
+        `;
+      });
+    }
+
+    function addBathroom() {
+      if (visitForm.bathrooms.length < 5) {
+        visitForm.bathrooms.push({ type: 'Shower' });
+        renderBathrooms();
+      }
+    }
+
+    function removeBathroom(idx) {
+      visitForm.bathrooms.splice(idx, 1);
+      renderBathrooms();
+    }
+
+    function setBathType(idx, type) {
+      visitForm.bathrooms[idx].type = type;
+      renderBathrooms();
+    }
+
+    function calculateVisitTotal() {
+      const hrs = parseFloat(document.getElementById('v-tempo-comb').value) || 0;
+      const rate = parseFloat(document.getElementById('v-rate').value) || 0;
+      document.getElementById('lbl-horas-comb').innerText = hrs;
+      document.getElementById('lbl-total-visita').innerText = `£${(hrs * rate).toFixed(2)}`;
+    }
+
+    function clearVisitForm() {
+      document.getElementById('v-nome').value = '';
+      document.getElementById('v-endereco').value = '';
+      document.getElementById('v-prioridades').value = '';
+      document.getElementById('v-tempo-1').value = '';
+      document.getElementById('v-tempo-comb').value = '';
+      document.getElementById('v-rate').value = '';
+      visitForm = { pet: false, criancas: false, quartos: 0, lavabo: 0, salas: 0, bathrooms: [{ type: 'Shower' }], piso: 'Piso' };
+      setPet(false); setCriancas(false);
+      document.getElementById('cnt-quartos').innerText = 0;
+      document.getElementById('cnt-lavabo').innerText = 0;
+      document.getElementById('cnt-salas').innerText = 0;
+      renderBathrooms();
+      calculateVisitTotal();
+    }
+
+    function saveVisit() {
+      const nome = document.getElementById('v-nome').value;
+      if (!nome) { alert("Por favor, digite o nome do cliente."); return; }
+
+      const newVisit = {
+        id: Math.random().toString(36).substr(2, 7),
+        nome: nome,
+        endereco: document.getElementById('v-endereco').value,
+        prioridades: document.getElementById('v-prioridades').value,
+        pet: visitForm.pet,
+        criancas: visitForm.criancas,
+        quartos: visitForm.quartos,
+        lavabo: visitForm.lavabo,
+        salas: visitForm.salas,
+        bathrooms: visitForm.bathrooms,
+        piso: visitForm.piso,
+        tempo1: document.getElementById('v-tempo-1').value,
+        tempoComb: document.getElementById('v-tempo-comb').value,
+        rate: document.getElementById('v-rate').value,
+        total: (parseFloat(document.getElementById('v-tempo-comb').value) || 0) * (parseFloat(document.getElementById('v-rate').value) || 0)
+      };
+
+      if (!appData.visits) appData.visits = [];
+      appData.visits.push(newVisit);
+      saveData();
+      clearVisitForm();
+      renderAll();
+      alert("Visita salva com sucesso!");
+    }
+
+    function renderSavedVisits() {
+      const container = document.getElementById('saved-visits-list');
+      container.innerHTML = '';
+      if (!appData.visits || appData.visits.length === 0) {
+        container.innerHTML = `<p style="color:var(--text-muted); font-size:13px;">Nenhuma visita guardada.</p>`;
+        return;
+      }
+
+      appData.visits.forEach((v, idx) => {
+        container.innerHTML += `
+          <div class="card" style="margin-bottom:12px;">
+            <div class="card-header">
+              <span class="client-name">${v.nome}</span>
+              <button onclick="deleteVisit(${idx})" style="background:none; border:none; color:#ef4444; font-size:12px; cursor:pointer; font-weight:600;">Remover</button>
+            </div>
+            <div style="font-size:13px; color:var(--text-muted); line-height:1.6;">
+              <p>📍 <strong>Endereço:</strong> ${v.endereco || 'N/A'}</p>
+              <p>📌 <strong>Prioridades:</strong> ${v.prioridades || 'N/A'}</p>
+              <p>🐾 Pet: ${v.pet ? 'Sim' : 'Não'} | 👶 Crianças: ${v.criancas ? 'Sim' : 'Não'}</p>
+              <p>🛏 Quartos: ${v.quartos} | 🚪 Lavabo: ${v.lavabo} | 🛋️ Salas: ${v.salas} | 🚿 Banheiros: ${v.bathrooms ? v.bathrooms.length : 0}</p>
+              <p>🪵 Piso: ${v.piso} | ⏱️ Combinado: ${v.tempoComb}h | 💰 Total: £${(v.total || 0).toFixed(2)}</p>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function deleteVisit(idx) {
+      if (confirm("Remover esta visita guardada?")) {
+        appData.visits.splice(idx, 1);
+        saveData();
+        renderAll();
+      }
+    }
+
     function switchTab(tab) {
       ['agenda', 'equipe', 'visitas', 'financeiro', 'backup'].forEach(t => {
         const el = document.getElementById(`tab-${t}`);
@@ -963,6 +1192,8 @@
       };
       reader.readAsText(file);
     }
+
+    renderBathrooms();
   </script>
 </body>
 </html>
