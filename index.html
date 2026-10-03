@@ -79,6 +79,8 @@
 
     .section-box { background: #1e293b; border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
 
+    .pay-cycle-box { background: #1e3a5f; border: 1px solid var(--primary); border-radius: 12px; padding: 14px; margin-bottom: 16px; }
+
     .fin-day-card { background: #0f172a; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
     .fin-day-title { font-weight: bold; color: var(--primary); font-size: 14px; margin-bottom: 4px; }
     .fin-day-details { font-size: 12px; color: var(--text-muted); display: flex; justify-content: space-between; }
@@ -110,7 +112,6 @@
   <!-- ABA AGENDA -->
   <div id="tab-agenda">
     <div class="controls-bar">
-      <!-- NAVEGADOR DE CICLOS AUTOMÁTICOS -->
       <div class="week-navigator">
         <button class="btn" onclick="changeWeekOffset(-1)">◄ Sem. Anterior</button>
         <span id="current-cycle-label" style="font-weight: bold; font-size: 13px; color: var(--primary);">Ciclo Atual</span>
@@ -130,15 +131,34 @@
 
   <!-- ABA EQUIPE -->
   <div id="tab-equipe" style="display:none;">
+    <!-- 1. BLOCO FECHAMENTO DE FOLHA (SEXTA ANTERIOR ATÉ QUINTA ATUAL) -->
+    <div class="pay-cycle-box">
+      <h3 style="color: var(--primary); margin-bottom: 6px; font-size: 16px;">💳 Fechamento para Pagamento na Sexta-feira</h3>
+      <p id="pay-cycle-dates-label" style="font-size: 12px; color: #e2e8f0; margin-bottom: 12px;">Corte: Sexta anterior até Quinta-feira atual</p>
+      
+      <table class="team-table" style="background: #0f172a; border-radius: 8px;">
+        <thead>
+          <tr>
+            <th>Funcionário</th>
+            <th>Taxa (£/h)</th>
+            <th>Horas a Pagar</th>
+            <th>Total a Pagar Sexta (£)</th>
+          </tr>
+        </thead>
+        <tbody id="team-pay-cycle-body"></tbody>
+      </table>
+    </div>
+
+    <!-- 2. VISÃO DA SEMANA CORRENTE (SEGUNDA A SEXTA) -->
     <div class="section-box">
-      <h3 style="color: var(--primary); margin-bottom: 12px;">Relatório da Equipe na Semana Selecionada</h3>
+      <h3 style="color: var(--text-main); margin-bottom: 12px; font-size: 15px;">📊 Produção da Semana Selecionada (Segunda a Sexta)</h3>
       <table class="team-table">
         <thead>
           <tr>
             <th>Funcionário</th>
             <th>Taxa (£/h) / Função</th>
-            <th>Horas Trabalhadas</th>
-            <th>A Receber (£)</th>
+            <th>Horas Produzidas</th>
+            <th>Valor Gerado (£)</th>
           </tr>
         </thead>
         <tbody id="team-summary-body"></tbody>
@@ -234,11 +254,8 @@
     const db = firebase.database();
     const appDataRef = db.ref('sm_cleaners_app_data');
 
-    // Deslocamento de semanas (0 = Atual/05/10, +1 = Próxima/12/10, etc)
     let currentWeekOffset = 0;
-
-    // Data base da Segunda-feira da Semana 1 (28/09/2026)
-    const baseSemana1Start = new Date(2026, 8, 28); // Mês 8 = Setembro
+    const baseSemana1Start = new Date(2026, 8, 28); // 28/09/2026
 
     const fixedMensalClients = ["Bernadette", "Bushra"];
 
@@ -301,7 +318,6 @@
       }
     }
 
-    // Função de Cálculo Dinâmico da Data exata por Dia/Semana/Deslocamento
     function getCalculatedDate(weekKey, dayName, offset = 0) {
       let base = new Date(baseSemana1Start);
       let dayAdd = 0;
@@ -311,7 +327,6 @@
 
       if (weekKey === 'semana2') dayAdd += 7;
 
-      // Soma o deslocamento de semanas (+7 dias por semana avançada)
       base.setDate(base.getDate() + dayAdd + (offset * 7));
 
       let yyyy = base.getFullYear();
@@ -342,7 +357,10 @@
             { id: "s1_seg_6", name: "Rachel Fazendinha", horario: "16:10", horarioFim: "17:10", hours: 3, value: 63, pay: "cash", mensal: false, workers: [] },
             { id: "s1_seg_7", name: "Jeanette", horario: "17:20", horarioFim: "18:20", hours: 2, value: 42, pay: "cash", mensal: false, workers: [] }
           ],
-          terca: [], quarta: [], quinta: [], sexta: []
+          terca: [], quarta: [], quinta: [],
+          sexta: [
+            { id: "s1_sex_1", name: "Bernadette", horario: "08:00", horarioFim: "10:30", hours: 10, value: 200, pay: "transfer", mensal: true, workers: ["Roberta", "Lorruama"] }
+          ]
         },
         semana2: {
           segunda: [
@@ -358,7 +376,8 @@
             { id: "s2_ter_1", name: "Rhiannon", horario: "08:00", horarioFim: "09:00", hours: 4, value: 84, pay: "cash", mensal: false, workers: [] },
             { id: "s2_ter_2", name: "Sasha", horario: "09:10", horarioFim: "10:10", hours: 3, value: 63, pay: "cash", mensal: false, workers: [] },
             { id: "s2_ter_3", name: "Phoebe", horario: "10:20", horarioFim: "11:20", hours: 3, value: 63, pay: "cash", mensal: false, workers: [] }
-          ]
+          ],
+          quarta: [], quinta: [], sexta: []
         }
       }
     };
@@ -506,7 +525,7 @@
 
               <div class="card-body">
                 <div>
-                  ⏱️️ <input type="number" class="card-input-inline" value="${client.hours}" onchange="updateClientField('${day}', ${idx}, 'hours', this.value)"> h | 
+                  ⏱ <input type="number" class="card-input-inline" value="${client.hours}" onchange="updateClientField('${day}', ${idx}, 'hours', this.value)"> h | 
                   £ <input type="number" class="card-input-inline" value="${client.value}" onchange="updateClientField('${day}', ${idx}, 'value', this.value)">
                 </div>
                 <div>
@@ -602,10 +621,89 @@
     }
 
     function renderTeamSummary() {
-      const tbody = document.getElementById('team-summary-body');
-      tbody.innerHTML = '';
-      const currentWeekDays = appData.weeks[appData.selectedWeekKey] || {};
-      
+      const payBody = document.getElementById('team-pay-cycle-body');
+      const summaryBody = document.getElementById('team-summary-body');
+      payBody.innerHTML = ''; summaryBody.innerHTML = '';
+
+      // 1. CÁLCULO DO CICLO DE CORTE PARA PAGAMENTO (SEXTA DA SEMANA ANTERIOR A QUINTA DA SEMANA ATUAL)
+      let prevWeekKey = (appData.selectedWeekKey === 'semana2') ? 'semana1' : 'semana2';
+      let prevOffset = (appData.selectedWeekKey === 'semana1') ? currentWeekOffset - 1 : currentWeekOffset;
+
+      let prevSextaDate = getCalculatedDate(prevWeekKey, 'sexta', prevOffset);
+      let currQuintaDate = getCalculatedDate(appData.selectedWeekKey, 'quinta', currentWeekOffset);
+
+      document.getElementById('pay-cycle-dates-label').innerText = `📅 Período de Corte: Sexta (${prevSextaDate.formatted.slice(0,5)}) até Quinta (${currQuintaDate.formatted.slice(0,5)})`;
+
+      let payCycleHours = {};
+      let payCycleValues = {};
+
+      appData.teamMembers.forEach(m => { payCycleHours[m.name] = 0; payCycleValues[m.name] = 0; });
+
+      // Função auxiliar para somar horas de um dia específico
+      function addHoursForDay(wKey, dKey) {
+        let clients = (appData.weeks[wKey] && appData.weeks[wKey][dKey]) ? appData.weeks[wKey][dKey] : [];
+        clients.forEach(client => {
+          let assigned = client.workers || [];
+          if (assigned.length === 0) return;
+
+          let houseValue = parseFloat(client.value) || 0;
+          let totalHours = parseFloat(client.hours) || 0;
+          let normalWorkers = [];
+          let ownersAssigned = [];
+
+          assigned.forEach(wName => {
+            let mObj = appData.teamMembers.find(t => t.name === wName);
+            if (mObj && mObj.isOwner) ownersAssigned.push(wName);
+            else normalWorkers.push(wName);
+          });
+
+          let hoursPerPerson = totalHours / assigned.length;
+          let totalPaidToNormalWorkers = 0;
+
+          normalWorkers.forEach(wName => {
+            let mObj = appData.teamMembers.find(t => t.name === wName);
+            let payForThisHouse = hoursPerPerson * mObj.rate;
+            payCycleHours[wName] += hoursPerPerson;
+            payCycleValues[wName] += payForThisHouse;
+            totalPaidToNormalWorkers += payForThisHouse;
+          });
+
+          let surplus = houseValue - totalPaidToNormalWorkers;
+
+          if (ownersAssigned.length > 0) {
+            let surplusPerOwner = surplus / ownersAssigned.length;
+            ownersAssigned.forEach(oName => {
+              payCycleHours[oName] += hoursPerPerson;
+              payCycleValues[oName] += surplusPerOwner;
+            });
+          } else {
+            let surplusPerOwner = surplus / 2;
+            payCycleValues["Suzana"] += surplusPerOwner;
+            payCycleValues["Márcio"] += surplusPerOwner;
+          }
+        });
+      }
+
+      // Adiciona Sexta-feira da semana passada
+      addHoursForDay(prevWeekKey, 'sexta');
+      // Adiciona Segunda a Quinta da semana corrente
+      ['segunda', 'terca', 'quarta', 'quinta'].forEach(d => addHoursForDay(appData.selectedWeekKey, d));
+
+      appData.teamMembers.forEach(member => {
+        let h = payCycleHours[member.name] || 0;
+        let v = payCycleValues[member.name] || 0;
+        payBody.innerHTML += `
+          <tr>
+            <td><strong>${member.name}</strong> ${member.isOwner ? '👑' : ''}</td>
+            <td>${member.isOwner ? 'Empresa' : '£' + member.rate.toFixed(2)}</td>
+            <td><strong>${h.toFixed(2)}h</strong></td>
+            <td><strong style="color:var(--primary); font-size:15px;">£${v.toFixed(2)}</strong></td>
+          </tr>
+        `;
+      });
+
+      // 2. CÁLCULO DA SEMANA SELECIONADA CORRENTE (SEGUNDA A SEXTA COMPLETA)
+      let currentWeekDays = appData.weeks[appData.selectedWeekKey] || {};
       let memberHoursMap = {};
       let memberPayMap = {};
 
@@ -659,7 +757,7 @@
         let p = memberPayMap[member.name] || 0;
         let rateDisplay = member.isOwner ? `<span style="color:var(--accent)">Excedente / Empresa</span>` : `£${member.rate.toFixed(2)}`;
 
-        tbody.innerHTML += `
+        summaryBody.innerHTML += `
           <tr>
             <td><strong>${member.name}</strong> ${member.isOwner ? '👑' : ''}</td>
             <td>${rateDisplay}</td>
@@ -680,7 +778,6 @@
 
       let mensalStats = { "Bernadette": { hours: 0, value: 0, count: 0 }, "Bushra": { hours: 0, value: 0, count: 0 } };
 
-      // Calcula o mês visualizado de acordo com o offset
       let currentViewDate = getCalculatedDate(appData.selectedWeekKey, 'segunda', currentWeekOffset);
       let currentYearMonth = currentViewDate.ISO.slice(0,7);
 
