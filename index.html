@@ -31,6 +31,7 @@
     nav.tabs button.active { color: #fff; background: var(--primary); }
 
     .controls-bar { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+    .week-navigator { display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 6px; }
     .week-selector { display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 10px; border-radius: 10px; border: 1px solid var(--border-color); }
     .btn-sub-tab { flex: 1; padding: 8px; border: 1px solid var(--border-color); background: #334155; color: #fff; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; }
     .btn-sub-tab.active { background: var(--primary); color: #0f172a; }
@@ -109,9 +110,16 @@
   <!-- ABA AGENDA -->
   <div id="tab-agenda">
     <div class="controls-bar">
+      <!-- NAVEGADOR DE CICLOS AUTOMÁTICOS -->
+      <div class="week-navigator">
+        <button class="btn" onclick="changeWeekOffset(-1)">◄ Sem. Anterior</button>
+        <span id="current-cycle-label" style="font-weight: bold; font-size: 13px; color: var(--primary);">Ciclo Atual</span>
+        <button class="btn" onclick="changeWeekOffset(1)">Próx. Semana ►</button>
+      </div>
+
       <div class="week-selector">
-        <button class="btn-sub-tab" id="sub-sem1" onclick="selectWeek('semana1')">Semana 1 (28/09)</button>
-        <button class="btn-sub-tab active" id="sub-sem2" onclick="selectWeek('semana2')">Semana 2 (05/10)</button>
+        <button class="btn-sub-tab" id="sub-sem1" onclick="selectWeek('semana1')">Semana 1</button>
+        <button class="btn-sub-tab active" id="sub-sem2" onclick="selectWeek('semana2')">Semana 2</button>
         <button class="btn-sub-tab" id="sub-outros" onclick="selectWeek('outros')">Outros / Mensal</button>
       </div>
       <button class="btn btn-primary" onclick="addNewClient()">+ Novo Agendamento</button>
@@ -179,24 +187,20 @@
 
   <!-- ABA FINANCEIRO -->
   <div id="tab-financeiro" style="display:none;">
-    <!-- BLOCO MENSAL EXCLUSIVO (Dia 01 ao Último Dia do Mês) -->
     <div class="mensal-box">
       <h3 style="color: #c084fc; margin-bottom: 8px;">🗓 Clientes Mensais (Bernadette & Bushra)</h3>
-      <p style="font-size: 12px; color: #e9d5ff; margin-bottom: 10px;">Contagem estrita do dia 01 ao último dia do mês corrente:</p>
+      <p style="font-size: 12px; color: #e9d5ff; margin-bottom: 10px;">Contagem do dia 01 ao último dia do mês selecionado:</p>
       <div id="financial-summary-mensal"></div>
     </div>
 
-    <!-- BLOCO SEMANAL DE ENTRADAS -->
     <div class="section-box">
       <h3 style="color: var(--primary); margin-bottom: 12px;">Resumo Financeiro Semanal</h3>
       <div id="financial-summary-days"></div>
       <div id="financial-summary-total" style="font-size: 15px; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--border-color);"></div>
     </div>
 
-    <!-- HISTÓRICO ACUMULADO MÊS A MÊS -->
     <div class="section-box">
       <h3 style="color: var(--accent); margin-bottom: 12px;">📊 Contabilidade Acumulada (Mês a Mês)</h3>
-      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">Histórico completo de faturamento e pagamentos de funcionários:</p>
       <div id="financial-monthly-history"></div>
     </div>
   </div>
@@ -230,11 +234,11 @@
     const db = firebase.database();
     const appDataRef = db.ref('sm_cleaners_app_data');
 
-    // Mapeamento de datas exatas por dia e ano
-    const dateMap = {
-      semana1: { segunda: "2026-09-28", terca: "2026-09-29", quarta: "2026-09-30", quinta: "2026-10-01", sexta: "2026-10-02" },
-      semana2: { segunda: "2026-10-05", terca: "2026-10-06", quarta: "2026-10-07", quinta: "2026-10-08", sexta: "2026-10-09" }
-    };
+    // Deslocamento de semanas (0 = Atual/05/10, +1 = Próxima/12/10, etc)
+    let currentWeekOffset = 0;
+
+    // Data base da Segunda-feira da Semana 1 (28/09/2026)
+    const baseSemana1Start = new Date(2026, 8, 28); // Mês 8 = Setembro
 
     const fixedMensalClients = ["Bernadette", "Bushra"];
 
@@ -297,6 +301,26 @@
       }
     }
 
+    // Função de Cálculo Dinâmico da Data exata por Dia/Semana/Deslocamento
+    function getCalculatedDate(weekKey, dayName, offset = 0) {
+      let base = new Date(baseSemana1Start);
+      let dayAdd = 0;
+
+      const dayOffsetMap = { segunda: 0, terca: 1, quarta: 2, quinta: 3, sexta: 4 };
+      if (dayOffsetMap[dayName] !== undefined) dayAdd = dayOffsetMap[dayName];
+
+      if (weekKey === 'semana2') dayAdd += 7;
+
+      // Soma o deslocamento de semanas (+7 dias por semana avançada)
+      base.setDate(base.getDate() + dayAdd + (offset * 7));
+
+      let yyyy = base.getFullYear();
+      let mm = String(base.getMonth() + 1).padStart(2, '0');
+      let dd = String(base.getDate()).padStart(2, '0');
+
+      return { ISO: `${yyyy}-${mm}-${dd}`, formatted: `${dd}/${mm}/${yyyy}` };
+    }
+
     const exactListData = {
       selectedWeekKey: "semana2",
       teamMembers: [
@@ -318,9 +342,7 @@
             { id: "s1_seg_6", name: "Rachel Fazendinha", horario: "16:10", horarioFim: "17:10", hours: 3, value: 63, pay: "cash", mensal: false, workers: [] },
             { id: "s1_seg_7", name: "Jeanette", horario: "17:20", horarioFim: "18:20", hours: 2, value: 42, pay: "cash", mensal: false, workers: [] }
           ],
-          quinta: [
-            { id: "s1_qui_1", name: "Bernadette", horario: "08:00", horarioFim: "10:30", hours: 10, value: 200, pay: "transfer", mensal: true, workers: ["Roberta", "Lorruama"] }
-          ]
+          terca: [], quarta: [], quinta: [], sexta: []
         },
         semana2: {
           segunda: [
@@ -365,11 +387,23 @@
       }
     }
 
+    function changeWeekOffset(val) {
+      currentWeekOffset += val;
+      renderAll();
+    }
+
     function renderAll() {
+      updateCycleLabel();
       renderAgenda();
       renderTeamSummary();
       renderFinancialSummary();
       renderSavedVisits();
+    }
+
+    function updateCycleLabel() {
+      let segDate = getCalculatedDate(appData.selectedWeekKey, 'segunda', currentWeekOffset);
+      let sexDate = getCalculatedDate(appData.selectedWeekKey, 'sexta', currentWeekOffset);
+      document.getElementById('current-cycle-label').innerText = `${segDate.formatted.slice(0,5)} até ${sexDate.formatted.slice(0,5)}`;
     }
 
     function selectWeek(weekKey) {
@@ -410,9 +444,8 @@
         let totalHours = clients.reduce((acc, c) => acc + (parseFloat(c.hours) || 0), 0);
         let totalValue = clients.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
 
-        let ISOdate = (dateMap[appData.selectedWeekKey] && dateMap[appData.selectedWeekKey][day]) ? dateMap[appData.selectedWeekKey][day] : '';
-        let displayDate = ISOdate ? ` (${ISOdate.slice(8,10)}/${ISOdate.slice(5,7)})` : '';
-        let titleDisplay = (day === "outros") ? "Clientes Mensais / Outros" : day.charAt(0).toUpperCase() + day.slice(1) + "-feira" + displayDate;
+        let calcDate = getCalculatedDate(appData.selectedWeekKey, day, currentWeekOffset);
+        let titleDisplay = (day === "outros") ? "Clientes Mensais / Outros" : day.charAt(0).toUpperCase() + day.slice(1) + `-feira (${calcDate.formatted.slice(0,5)})`;
 
         let workerHoursDay = {};
         clients.forEach(c => {
@@ -473,7 +506,7 @@
 
               <div class="card-body">
                 <div>
-                  ⏱️ <input type="number" class="card-input-inline" value="${client.hours}" onchange="updateClientField('${day}', ${idx}, 'hours', this.value)"> h | 
+                  ⏱️️ <input type="number" class="card-input-inline" value="${client.hours}" onchange="updateClientField('${day}', ${idx}, 'hours', this.value)"> h | 
                   £ <input type="number" class="card-input-inline" value="${client.value}" onchange="updateClientField('${day}', ${idx}, 'value', this.value)">
                 </div>
                 <div>
@@ -562,8 +595,7 @@
       if (appData.weeks[appData.selectedWeekKey][day]) {
         appData.weeks[appData.selectedWeekKey][day].push({
           id: Math.random().toString(36).substr(2, 7),
-          name: name,
-          horario: "08:00", horarioFim: "", hours: parseFloat(hours) || 0, value: parseFloat(value) || 0, pay: "cash", workers: []
+          name: name, horario: "08:00", horarioFim: "", hours: parseFloat(hours) || 0, value: parseFloat(value) || 0, pay: "cash", workers: []
         });
         saveData(); renderAll();
       }
@@ -648,15 +680,16 @@
 
       let mensalStats = { "Bernadette": { hours: 0, value: 0, count: 0 }, "Bushra": { hours: 0, value: 0, count: 0 } };
 
-      // Considera apenas o mês atual (Outubro / 2026) estritamente do dia 01 ao último dia do mês
-      const currentYearMonth = "2026-10";
+      // Calcula o mês visualizado de acordo com o offset
+      let currentViewDate = getCalculatedDate(appData.selectedWeekKey, 'segunda', currentWeekOffset);
+      let currentYearMonth = currentViewDate.ISO.slice(0,7);
 
       Object.keys(appData.weeks).forEach(wKey => {
         const wObj = appData.weeks[wKey] || {};
         Object.keys(wObj).forEach(dKey => {
-          let ISOdate = (dateMap[wKey] && dateMap[wKey][dKey]) ? dateMap[wKey][dKey] : '';
+          let calcD = getCalculatedDate(wKey, dKey, currentWeekOffset);
           
-          if (ISOdate && ISOdate.startsWith(currentYearMonth)) {
+          if (calcD.ISO.startsWith(currentYearMonth)) {
             (wObj[dKey] || []).forEach(c => {
               if (fixedMensalClients.includes(c.name)) {
                 if (!mensalStats[c.name]) mensalStats[c.name] = { hours: 0, value: 0, count: 0 };
@@ -686,8 +719,8 @@
 
       mensalDiv.innerHTML = mensalHTML + `
         <div style="margin-top:10px; padding-top:8px; border-top:1px dashed #a855f7; font-size:14px; color:#fff; display:flex; justify-content:space-between;">
-          <span>⏱️ Total Horas Mensais: <strong>${totalMensalGeralHoras.toFixed(1)}h</strong></span>
-          <strong style="color:#c084fc;">Faturamento Mês (01 a 31): £${totalMensalGeralVal.toFixed(2)}</strong>
+          <span>⏱️ Horas do Mês: <strong>${totalMensalGeralHoras.toFixed(1)}h</strong></span>
+          <strong style="color:#c084fc;">Faturamento Mês: £${totalMensalGeralVal.toFixed(2)}</strong>
         </div>
       `;
 
@@ -714,9 +747,8 @@
         totalSemanaCash += dayCash;
         totalSemanaTransfer += dayTransfer;
 
-        let ISOdate = (dateMap[appData.selectedWeekKey] && dateMap[appData.selectedWeekKey][day]) ? dateMap[appData.selectedWeekKey][day] : '';
-        let displayDate = ISOdate ? ` (${ISOdate.slice(8,10)}/${ISOdate.slice(5,7)})` : '';
-        let dayTitle = (day === "outros") ? "Outros / Mensal" : day.charAt(0).toUpperCase() + day.slice(1) + "-feira" + displayDate;
+        let calcD = getCalculatedDate(appData.selectedWeekKey, day, currentWeekOffset);
+        let dayTitle = (day === "outros") ? "Outros / Mensal" : day.charAt(0).toUpperCase() + day.slice(1) + `-feira (${calcD.formatted.slice(0,5)})`;
 
         daysDiv.innerHTML += `
           <div class="fin-day-card">
@@ -738,17 +770,17 @@
         <p style="font-size:18px; color:var(--primary); margin-top:8px;">💰 <strong>Entradas da Semana: £${totalGeralSemana.toFixed(2)}</strong></p>
       `;
 
-      // 3. CONTABILIDADE ACUMULADA MÊS A MÊS (A partir da semana passada 28/09/2026)
+      // Contabilidade Acumulada Mês a Mês
       let monthlyData = {};
 
       Object.keys(appData.weeks).forEach(wKey => {
         const wObj = appData.weeks[wKey] || {};
         Object.keys(wObj).forEach(dKey => {
-          let ISOdate = (dateMap[wKey] && dateMap[wKey][dKey]) ? dateMap[wKey][dKey] : '2026-10-01';
-          let mKey = ISOdate.slice(0,7); // Formato YYYY-MM
+          let calcD = getCalculatedDate(wKey, dKey, currentWeekOffset);
+          let mKey = calcD.ISO.slice(0,7);
           
           if (!monthlyData[mKey]) {
-            monthlyData[mKey] = { totalRevenue: 0, workersPay: {}, weeksData: {} };
+            monthlyData[mKey] = { totalRevenue: 0, workersPay: {} };
             appData.teamMembers.forEach(tm => monthlyData[mKey].workersPay[tm.name] = 0);
           }
 
