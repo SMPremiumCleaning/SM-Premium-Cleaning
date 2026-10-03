@@ -40,9 +40,11 @@
 
     .days-grid { display: flex; flex-direction: column; gap: 16px; }
     .day-column { background: #1e293b; border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; }
-    .day-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color); }
+    .day-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color); }
     .day-title { font-weight: 700; font-size: 16px; color: var(--primary); }
     .day-stats { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+
+    .day-workers-summary { font-size: 11px; color: var(--accent); margin-bottom: 12px; background: #0f172a; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-color); }
 
     .card { background: #0f172a; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-bottom: 10px; }
     .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
@@ -93,6 +95,10 @@
     .btn-add-sub { width: 100%; padding: 8px; background: transparent; border: 1px dashed var(--border-color); color: var(--primary); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
 
     .calc-row { display: flex; align-items: center; gap: 10px; background: #0f172a; padding: 12px; border-radius: 6px; border: 1px solid var(--border-color); margin-top: 10px; }
+
+    .fin-day-card { background: #0f172a; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+    .fin-day-title { font-weight: bold; color: var(--primary); font-size: 14px; margin-bottom: 4px; }
+    .fin-day-details { font-size: 12px; color: var(--text-muted); display: flex; justify-content: space-between; }
   </style>
 
   <!-- FIREBASE SDKs -->
@@ -118,8 +124,8 @@
   <div id="tab-agenda">
     <div class="controls-bar">
       <div class="week-selector">
-        <button class="btn-sub-tab active" id="sub-sem1" onclick="selectWeek('semana1')">Semana 1</button>
-        <button class="btn-sub-tab" id="sub-sem2" onclick="selectWeek('semana2')">Semana 2</button>
+        <button class="btn-sub-tab" id="sub-sem1" onclick="selectWeek('semana1')">Semana 1 (28/09)</button>
+        <button class="btn-sub-tab active" id="sub-sem2" onclick="selectWeek('semana2')">Semana 2 (05/10)</button>
         <button class="btn-sub-tab" id="sub-outros" onclick="selectWeek('outros')">Outros / Mensal</button>
       </div>
       <button class="btn btn-primary" onclick="addNewClient()">+ Novo Agendamento</button>
@@ -263,8 +269,9 @@
   <!-- ABA FINANCEIRO -->
   <div id="tab-financeiro" style="display:none;">
     <div class="section-box">
-      <h3 style="color: var(--primary); margin-bottom: 12px;">Resumo Financeiro</h3>
-      <div id="financial-summary" style="font-size: 14px; line-height: 1.8;"></div>
+      <h3 style="color: var(--primary); margin-bottom: 12px;">Resumo Financeiro por Dia</h3>
+      <div id="financial-summary-days"></div>
+      <div id="financial-summary-total" style="font-size: 15px; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--border-color);"></div>
     </div>
   </div>
 
@@ -298,8 +305,14 @@
     const db = firebase.database();
     const appDataRef = db.ref('sm_cleaners_app_data');
 
+    // Mapeamento de datas exatas
+    const dateMap = {
+      semana1: { segunda: "28/09", terca: "29/09", quarta: "30/09", quinta: "01/10", sexta: "02/10" },
+      semana2: { segunda: "05/10", terca: "06/10", quarta: "07/10", quinta: "08/10", sexta: "09/10" }
+    };
+
     const exactListData = {
-      selectedWeekKey: "semana1",
+      selectedWeekKey: "semana2",
       teamMembers: [
         { name: "Roberta", rate: 15, isOwner: false },
         { name: "Lorruama", rate: 12.21, isOwner: false },
@@ -319,48 +332,12 @@
             { id: "s1_seg_6", name: "Rachel Fazendinha", horario: "16:10", horarioFim: "17:10", hours: 3, value: 63, pay: "cash", mensal: false, workers: [] },
             { id: "s1_seg_7", name: "Jeanette", horario: "17:20", horarioFim: "18:20", hours: 2, value: 42, pay: "cash", mensal: false, workers: [] }
           ],
-          terca: [
-            { id: "s1_ter_1", name: "Rhiannon", horario: "08:00", horarioFim: "09:00", hours: 4, value: 84, pay: "cash", mensal: false, workers: [] },
-            { id: "s1_ter_2", name: "Sasha", horario: "09:10", horarioFim: "10:10", hours: 3, value: 63, pay: "cash", mensal: false, workers: ["Victor Hugo"] },
-            { id: "s1_ter_3", name: "Phoebe", horario: "10:20", horarioFim: "11:20", hours: 3, value: 63, pay: "cash", mensal: false, workers: [] },
-            { id: "s1_ter_4", name: "Georgie", horario: "11:30", horarioFim: "12:30", hours: 4, value: 84, pay: "transfer", mensal: false, workers: [] },
-            { id: "s1_ter_5", name: "Rod", horario: "12:40", horarioFim: "13:40", hours: 3, value: 63, pay: "transfer", mensal: false, workers: [] },
-            { id: "s1_ter_6", name: "Lindsay", horario: "13:50", horarioFim: "14:50", hours: 3, value: 60, pay: "cash", mensal: false, workers: [] },
-            { id: "s1_ter_7", name: "Caroline", horario: "15:00", horarioFim: "16:00", hours: 2, value: 42, pay: "cash", mensal: false, workers: [] },
-            { id: "s1_ter_8", name: "Tom", horario: "16:10", horarioFim: "17:10", hours: 3, value: 63, pay: "cash", mensal: false, workers: [] },
-            { id: "s1_ter_9", name: "Ella", horario: "17:20", horarioFim: "18:20", hours: 2, value: 42, pay: "cash", mensal: false, workers: [] }
-          ],
-          quarta: [
-            { id: "s1_qua_1", name: "Jo", horario: "08:00", horarioFim: "10:00", hours: 6, value: 120, pay: "cash", mensal: false, workers: [] },
-            { id: "s1_qua_2", name: "Katie Claverton", horario: "10:10", horarioFim: "12:10", hours: 8, value: 160, pay: "transfer", mensal: false, workers: [] },
-            { id: "s1_qua_3", name: "Angie", horario: "12:20", horarioFim: "14:00", hours: 5, value: 105, pay: "transfer", mensal: false, workers: [] },
-            { id: "s1_qua_4", name: "Jaime", horario: "14:10", horarioFim: "15:10", hours: 3, value: 63, pay: "cash", mensal: false, workers: [] },
-            { id: "s1_qua_5", name: "Katherine", horario: "15:20", horarioFim: "16:20", hours: 3, value: 63, pay: "transfer", mensal: false, workers: [] },
-            { id: "s1_qua_6", name: "Anne Marie", horario: "16:30", horarioFim: "17:30", hours: 2, value: 42, pay: "cash", mensal: false, workers: [] }
-          ],
-          quinta: [
-            { id: "s1_qui_1", name: "Emma", horario: "08:00", horarioFim: "09:20", hours: 4, value: 80, pay: "transfer", mensal: false, workers: [] },
-            { id: "s1_qui_2", name: "Gemma", horario: "09:30", horarioFim: "10:30", hours: 3, value: 63, pay: "transfer", mensal: false, workers: [] },
-            { id: "s1_qui_3", name: "Ian", horario: "10:40", horarioFim: "11:40", hours: 3, value: 60, pay: "cash", mensal: false, workers: [] },
-            { id: "s1_qui_4", name: "Anne", horario: "11:50", horarioFim: "13:00", hours: 4, value: 88, pay: "transfer", mensal: false, workers: [] },
-            { id: "s1_qui_5", name: "Lynne", horario: "13:10", horarioFim: "14:20", hours: 4, value: 84, pay: "cash", mensal: false, workers: [] },
-            { id: "s1_qui_6", name: "Arabee", horario: "14:30", horarioFim: "15:40", hours: 4, value: 84, pay: "transfer", mensal: false, workers: [] },
-            { id: "s1_qui_7", name: "Laura", horario: "15:50", horarioFim: "17:30", hours: 6, value: 120, pay: "transfer", mensal: false, workers: [] },
-            { id: "s1_qui_8", name: "Julia", horario: "17:40", horarioFim: "19:00", hours: 6, value: 120, pay: "transfer", mensal: false, workers: [] }
-          ],
-          sexta: [
-            { id: "s1_sex_1", name: "Bernadette", horario: "08:00", horarioFim: "10:15", hours: 9, value: 180, pay: "transfer", mensal: true, workers: [] },
-            { id: "s1_sex_2", name: "Pippa", horario: "10:30", horarioFim: "12:00", hours: 6, value: 132, pay: "transfer", mensal: false, workers: [] },
-            { id: "s1_sex_3", name: "Chris", horario: "12:10", horarioFim: "13:10", hours: 4, value: 84, pay: "transfer", mensal: false, workers: [] },
-            { id: "s1_sex_4", name: "Tim", horario: "13:20", horarioFim: "14:20", hours: 2, value: 42, pay: "transfer", mensal: false, workers: [] },
-            { id: "s1_sex_5", name: "Rob", horario: "14:30", horarioFim: "15:30", hours: 3, value: 63, pay: "cash", mensal: false, workers: [] },
-            { id: "s1_sex_6", name: "James", horario: "15:40", horarioFim: "16:40", hours: 4, value: 84, pay: "cash", mensal: false, workers: [] }
-          ]
+          terca: [], quarta: [], quinta: [], sexta: []
         },
         semana2: {
           segunda: [
-            { id: "s2_seg_1", name: "Bernadette", horario: "08:00", horarioFim: "10:30", hours: 10, value: 200, pay: "transfer", mensal: true, workers: [] },
-            { id: "s2_seg_2", name: "Bushra", horario: "10:45", horarioFim: "11:45", hours: 4, value: 84, pay: "transfer", mensal: true, workers: [] },
+            { id: "s2_seg_1", name: "Bernadette", horario: "08:00", horarioFim: "10:30", hours: 10, value: 200, pay: "transfer", mensal: true, workers: ["Roberta", "Lorruama", "Suzana", "Márcio"] },
+            { id: "s2_seg_2", name: "Bushra", horario: "10:45", horarioFim: "11:45", hours: 4, value: 84, pay: "transfer", mensal: true, workers: ["Roberta", "Lorruama"] },
             { id: "s2_seg_3", name: "Jessica", horario: "12:00", horarioFim: "13:00", hours: 3, value: 63, pay: "transfer", mensal: false, workers: [] },
             { id: "s2_seg_4", name: "Katrina", horario: "13:10", horarioFim: "14:30", hours: 5, value: 105, pay: "transfer", mensal: false, workers: [] },
             { id: "s2_seg_5", name: "Rachel Nova", horario: "14:40", horarioFim: "15:40", hours: 3.5, value: 73.5, pay: "cash", mensal: false, workers: [] },
@@ -377,51 +354,17 @@
             { id: "s2_ter_7", name: "Brent", horario: "15:00", horarioFim: "16:00", hours: 4, value: 84, pay: "transfer", mensal: false, workers: [] },
             { id: "s2_ter_8", name: "Vanya", horario: "16:10", horarioFim: "17:30", hours: 5, value: 100, pay: "transfer", mensal: false, workers: [] }
           ],
-          quarta: [
-            { id: "s2_qua_1", name: "Jo", horario: "08:00", horarioFim: "09:30", hours: 6, value: 120, pay: "cash", mensal: false, workers: [] },
-            { id: "s2_qua_2", name: "Katie Claverton", horario: "09:40", horarioFim: "11:40", hours: 8, value: 160, pay: "transfer", mensal: false, workers: [] },
-            { id: "s2_qua_3", name: "Angie", horario: "11:50", horarioFim: "13:00", hours: 5, value: 105, pay: "transfer", mensal: false, workers: [] },
-            { id: "s2_qua_4", name: "Sarah", horario: "13:10", horarioFim: "14:10", hours: 4, value: 84, pay: "transfer", mensal: false, workers: [] },
-            { id: "s2_qua_5", name: "Rachel Porquinho", horario: "14:20", horarioFim: "15:20", hours: 4, value: 84, pay: "cash", mensal: false, workers: [] },
-            { id: "s2_qua_6", name: "Lucia", horario: "15:30", horarioFim: "16:30", hours: 4, value: 84, pay: "transfer", mensal: false, workers: [] },
-            { id: "s2_qua_7", name: "Sean", horario: "16:40", horarioFim: "17:40", hours: 3, value: 63, pay: "cash", mensal: false, workers: [] }
-          ],
-          quinta: [
-            { id: "s2_qui_1", name: "Emma", horario: "08:00", horarioFim: "09:00", hours: 4, value: 80, pay: "transfer", mensal: false, workers: [] },
-            { id: "s2_qui_2", name: "Ian", horario: "09:10", horarioFim: "10:10", hours: 3, value: 60, pay: "cash", mensal: false, workers: [] },
-            { id: "s2_qui_3", name: "Anne", horario: "10:20", horarioFim: "11:20", hours: 4, value: 88, pay: "transfer", mensal: false, workers: [] },
-            { id: "s2_qui_4", name: "Arabee", horario: "11:30", horarioFim: "12:30", hours: 4, value: 84, pay: "transfer", mensal: false, workers: [] },
-            { id: "s2_qui_5", name: "Laura", horario: "12:40", horarioFim: "14:10", hours: 6, value: 120, pay: "transfer", mensal: false, workers: [] },
-            { id: "s2_qui_6", name: "Jane", horario: "14:20", horarioFim: "15:50", hours: 6, value: 120, pay: "cash", mensal: false, workers: [] },
-            { id: "s2_qui_7", name: "Susie", horario: "16:00", horarioFim: "17:00", hours: 3, value: 63, pay: "cash", mensal: false, workers: [] },
-            { id: "s2_qui_8", name: "Julia", horario: "17:10", horarioFim: "18:40", hours: 6, value: 120, pay: "transfer", mensal: false, workers: [] }
-          ],
-          sexta: [
-            { id: "s2_sex_1", name: "Bernadette", horario: "08:00", horarioFim: "10:15", hours: 9, value: 180, pay: "transfer", mensal: true, workers: [] },
-            { id: "s2_sex_2", name: "Pippa", horario: "10:30", horarioFim: "12:00", hours: 6, value: 132, pay: "transfer", mensal: false, workers: [] },
-            { id: "s2_sex_3", name: "Chris", horario: "12:10", horarioFim: "13:10", hours: 4, value: 84, pay: "transfer", mensal: false, workers: [] },
-            { id: "s2_sex_4", name: "James", horario: "13:20", horarioFim: "14:20", hours: 4, value: 84, pay: "cash", mensal: false, workers: [] },
-            { id: "s2_sex_5", name: "Tim", horario: "14:30", horarioFim: "15:30", hours: 2, value: 42, pay: "transfer", mensal: false, workers: [] },
-            { id: "s2_sex_6", name: "Rob", horario: "15:40", horarioFim: "16:40", hours: 3, value: 63, pay: "cash", mensal: false, workers: [] }
-          ]
+          quarta: [], quinta: [], sexta: []
         },
-        outros: {
-          outros: [
-            { id: "out_1", name: "Morwenna", hours: 6, value: 125, pay: "cash", mensal: true, workers: [] },
-            { id: "out_2", name: "Valerie", hours: 4, value: 80, pay: "cash", mensal: true, workers: [] },
-            { id: "out_3", name: "Helen", hours: 4, value: 88, pay: "cash", mensal: true, workers: [] }
-          ]
-        }
+        outros: { outros: [] }
       }
     };
 
-    // Carrega primeiro do localStorage local para ter resposta instantânea
     let localSaved = localStorage.getItem('sm_cleaners_app_data') || localStorage.getItem('appData');
     let appData = localSaved ? JSON.parse(localSaved) : exactListData;
 
     let visitForm = { pet: false, criancas: false, quartos: 0, lavabo: 0, salas: 0, bathrooms: [{ type: 'Shower' }], piso: 'Piso' };
 
-    // Escutar mudanças no Firebase em TEMPO REAL
     appDataRef.on('value', (snapshot) => {
       const val = snapshot.val();
       if (val && Object.keys(val).length > 0) {
@@ -467,19 +410,14 @@
       if (!startTimeStr) return "";
       let parts = startTimeStr.split(":");
       if (parts.length < 2) return "";
-      
       let startH = parseInt(parts[0]) || 0;
       let startM = parseInt(parts[1]) || 0;
-
       let people = numPeople > 0 ? numPeople : 1;
       let actualDurationHours = (parseFloat(totalHours) || 0) / people;
-
       let durationMinutes = Math.round(actualDurationHours * 60);
-
       let totalStartMinutes = startH * 60 + startM + durationMinutes;
       let endH = Math.floor(totalStartMinutes / 60) % 24;
       let endM = totalStartMinutes % 60;
-
       let pad = (n) => n.toString().padStart(2, '0');
       return `${pad(endH)}:${pad(endM)}`;
     }
@@ -496,7 +434,23 @@
         let totalHours = clients.reduce((acc, c) => acc + (parseFloat(c.hours) || 0), 0);
         let totalValue = clients.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
 
-        let titleDisplay = (day === "outros") ? "Clientes Mensais / Outros" : day.charAt(0).toUpperCase() + day.slice(1) + "-feira";
+        // Formatação do Título com Data
+        let dateStr = (dateMap[appData.selectedWeekKey] && dateMap[appData.selectedWeekKey][day]) ? ` (${dateMap[appData.selectedWeekKey][day]})` : '';
+        let titleDisplay = (day === "outros") ? "Clientes Mensais / Outros" : day.charAt(0).toUpperCase() + day.slice(1) + "-feira" + dateStr;
+
+        // Cálculo do Total de Horas por Funcionário no Dia
+        let workerHoursDay = {};
+        clients.forEach(c => {
+          let assigned = c.workers || [];
+          if (assigned.length > 0) {
+            let hPerPerson = (parseFloat(c.hours) || 0) / assigned.length;
+            assigned.forEach(w => {
+              workerHoursDay[w] = (workerHoursDay[w] || 0) + hPerPerson;
+            });
+          }
+        });
+
+        let workerSummaryText = Object.keys(workerHoursDay).map(w => `<strong>${w}:</strong> ${workerHoursDay[w].toFixed(1)}h`).join(' | ');
 
         let dayHtml = `
           <div class="day-column">
@@ -504,6 +458,7 @@
               <span class="day-title">${titleDisplay}</span>
               <span class="day-stats">${totalHours}h | £${totalValue.toFixed(2)}</span>
             </div>
+            ${workerSummaryText ? `<div class="day-workers-summary">👥 <strong>Horas do dia:</strong> ${workerSummaryText}</div>` : ''}
         `;
 
         clients.forEach((client, idx) => {
@@ -572,9 +527,7 @@
 
     function updateClientTime(day, idx, field, val) {
       appData.weeks[appData.selectedWeekKey][day][idx][field] = val;
-      if (field === 'horarioFim') {
-        appData.weeks[appData.selectedWeekKey][day][idx].autoTime = false;
-      }
+      if (field === 'horarioFim') appData.weeks[appData.selectedWeekKey][day][idx].autoTime = false;
       saveData();
       renderAll();
     }
@@ -603,11 +556,9 @@
       const list = appData.weeks[appData.selectedWeekKey][day];
       const targetIndex = index + direction;
       if (targetIndex < 0 || targetIndex >= list.length) return;
-
       const temp = list[index];
       list[index] = list[targetIndex];
       list[targetIndex] = temp;
-
       saveData();
       renderAll();
     }
@@ -615,14 +566,9 @@
     function toggleWorker(day, clientIdx, workerName) {
       const client = appData.weeks[appData.selectedWeekKey][day][clientIdx];
       if (!client.workers) client.workers = [];
-      
       const wIdx = client.workers.indexOf(workerName);
-      if (wIdx > -1) {
-        client.workers.splice(wIdx, 1);
-      } else {
-        client.workers.push(workerName);
-      }
-
+      if (wIdx > -1) client.workers.splice(wIdx, 1);
+      else client.workers.push(workerName);
       saveData();
       renderAll();
     }
@@ -661,7 +607,6 @@
     function renderTeamSummary() {
       const tbody = document.getElementById('team-summary-body');
       tbody.innerHTML = '';
-
       const currentWeekDays = appData.weeks[appData.selectedWeekKey] || {};
       
       let memberHoursMap = {};
@@ -733,27 +678,51 @@
     }
 
     function renderFinancialSummary() {
-      const finDiv = document.getElementById('financial-summary');
-      const currentWeekDays = appData.weeks[appData.selectedWeekKey] || {};
-      
-      let totalCash = 0;
-      let totalTransfer = 0;
+      const daysDiv = document.getElementById('financial-summary-days');
+      const totalDiv = document.getElementById('financial-summary-total');
+      daysDiv.innerHTML = '';
 
-      Object.keys(currentWeekDays).forEach(day => {
-        (currentWeekDays[day] || []).forEach(c => {
+      const currentWeekDays = appData.weeks[appData.selectedWeekKey] || {};
+      const dayKeys = (appData.selectedWeekKey === 'outros') ? ["outros"] : ["segunda", "terca", "quarta", "quinta", "sexta"];
+
+      let totalSemanaCash = 0;
+      let totalSemanaTransfer = 0;
+
+      dayKeys.forEach(day => {
+        const clients = currentWeekDays[day] || [];
+        let dayCash = 0;
+        let dayTransfer = 0;
+
+        clients.forEach(c => {
           let val = parseFloat(c.value) || 0;
-          if (c.pay === 'transfer') totalTransfer += val;
-          else totalCash += val;
+          if (c.pay === 'transfer') dayTransfer += val;
+          else dayCash += val;
         });
+
+        totalSemanaCash += dayCash;
+        totalSemanaTransfer += dayTransfer;
+
+        let dateStr = (dateMap[appData.selectedWeekKey] && dateMap[appData.selectedWeekKey][day]) ? ` (${dateMap[appData.selectedWeekKey][day]})` : '';
+        let dayTitle = (day === "outros") ? "Outros / Mensal" : day.charAt(0).toUpperCase() + day.slice(1) + "-feira" + dateStr;
+
+        daysDiv.innerHTML += `
+          <div class="fin-day-card">
+            <div class="fin-day-title">${dayTitle}</div>
+            <div class="fin-day-details">
+              <span>💵 Cash: £${dayCash.toFixed(2)}</span>
+              <span>🏦 Transf: £${dayTransfer.toFixed(2)}</span>
+              <strong style="color:var(--primary)">Total: £${(dayCash + dayTransfer).toFixed(2)}</strong>
+            </div>
+          </div>
+        `;
       });
 
-      let totalGeral = totalCash + totalTransfer;
+      let totalGeral = totalSemanaCash + totalSemanaTransfer;
 
-      finDiv.innerHTML = `
-        <p>💵 <strong>Dinheiro (Cash):</strong> £${totalCash.toFixed(2)}</p>
-        <p>🏦 <strong>Transferência:</strong> £${totalTransfer.toFixed(2)}</p>
-        <hr style="border-color:var(--border-color); margin: 10px 0;">
-        <p style="font-size:16px; color:var(--primary);">💰 <strong>Faturamento Total:</strong> £${totalGeral.toFixed(2)}</p>
+      totalDiv.innerHTML = `
+        <p>💵 <strong>Total Cash na Semana:</strong> £${totalSemanaCash.toFixed(2)}</p>
+        <p>🏦 <strong>Total Transferência na Semana:</strong> £${totalSemanaTransfer.toFixed(2)}</p>
+        <p style="font-size:18px; color:var(--primary); margin-top:8px;">💰 <strong>Faturamento Geral: £${totalGeral.toFixed(2)}</strong></p>
       `;
     }
 
@@ -887,7 +856,7 @@
               <p>📍 <strong>Endereço:</strong> ${v.endereco || 'N/A'}</p>
               <p>📌 <strong>Prioridades:</strong> ${v.prioridades || 'N/A'}</p>
               <p>🐾 Pet: ${v.pet ? 'Sim' : 'Não'} | 👶 Crianças: ${v.criancas ? 'Sim' : 'Não'}</p>
-              <p>🛏️ Quartos: ${v.quartos} | 🚪 Lavabo: ${v.lavabo} | 🛋️ Salas: ${v.salas} | 🚿 Banheiros: ${v.bathrooms ? v.bathrooms.length : 0}</p>
+              <p>🛏️️ Quartos: ${v.quartos} | 🚪 Lavabo: ${v.lavabo} | 🛋️ Salas: ${v.salas} | 🚿 Banheiros: ${v.bathrooms ? v.bathrooms.length : 0}</p>
               <p>🪵 Piso: ${v.piso} | ⏱️ Combinado: ${v.tempoComb}h | 💰 Total: £${(v.total || 0).toFixed(2)}</p>
             </div>
           </div>
@@ -916,7 +885,6 @@
     /* BACKUP / RESTAURAÇÃO COMPATÍVEL COM SAFARI & FIREBASE */
     function exportarBackupJSON() {
       let backupData = appData || {};
-
       const dataStr = JSON.stringify(backupData, null, 2);
       const blob = new Blob([dataStr], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -935,19 +903,15 @@
       reader.onload = function(e) {
         try {
           const data = JSON.parse(e.target.result);
-
           if (!data || !data.weeks) {
             alert('Ficheiro de backup inválido.');
             return;
           }
-
           appData = data;
           saveData();
           renderAll();
-
           alert('Backup restaurado e sincronizado com sucesso!');
           setTimeout(() => { location.reload(); }, 300);
-
         } catch (err) {
           alert('Erro ao carregar ficheiro: ' + err.message);
         }
