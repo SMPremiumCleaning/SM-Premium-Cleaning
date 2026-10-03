@@ -78,29 +78,13 @@
 
     .section-box { background: #1e293b; border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
 
-    /* VISITAS */
-    .form-group { margin-bottom: 14px; }
-    .form-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; display: block; letter-spacing: 0.5px; }
-    .form-input, .form-textarea { width: 100%; padding: 10px; background: #0f172a; border: 1px solid var(--border-color); border-radius: 6px; color: #fff; font-size: 14px; }
-    .form-row { display: flex; gap: 12px; margin-bottom: 14px; }
-    .form-col { flex: 1; }
-
-    .toggle-group { display: flex; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; }
-    .toggle-btn { flex: 1; padding: 8px; background: #0f172a; color: var(--text-muted); border: none; cursor: pointer; font-weight: 600; font-size: 13px; text-align: center; }
-    .toggle-btn.active { background: #1e3a5f; color: #38bdf8; font-weight: 700; }
-
-    .counter-box { display: flex; align-items: center; justify-content: space-between; background: #0f172a; border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 8px; }
-    .counter-btn { width: 28px; height: 28px; background: #1e293b; border: 1px solid var(--border-color); color: #fff; font-size: 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-
-    .bathroom-row { display: flex; align-items: center; justify-content: space-between; background: #0f172a; border: 1px solid var(--border-color); padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; }
-    .btn-add-sub { width: 100%; padding: 8px; background: transparent; border: 1px dashed var(--border-color); color: var(--primary); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
-
-    .calc-row { display: flex; align-items: center; gap: 10px; background: #0f172a; padding: 12px; border-radius: 6px; border: 1px solid var(--border-color); margin-top: 10px; }
-
     .fin-day-card { background: #0f172a; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
     .fin-day-title { font-weight: bold; color: var(--primary); font-size: 14px; margin-bottom: 4px; }
     .fin-day-details { font-size: 12px; color: var(--text-muted); display: flex; justify-content: space-between; }
     .mensal-box { background: #2d1a47; border: 1px solid var(--tag-mensal); border-radius: 10px; padding: 14px; margin-bottom: 16px; }
+    
+    .history-card { background: #0f172a; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-top: 10px; }
+    .history-month-title { color: var(--accent); font-size: 15px; font-weight: 700; margin-bottom: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 4px; }
   </style>
 
   <!-- FIREBASE SDKs -->
@@ -178,90 +162,15 @@
         <textarea id="v-prioridades" class="form-textarea" rows="2" placeholder="O que o cliente pediu pra priorizar..."></textarea>
       </div>
 
-      <div class="form-row">
-        <div class="form-col">
-          <label class="form-label">TEM PET?</label>
-          <div class="toggle-group">
-            <button id="btn-pet-sim" class="toggle-btn" onclick="setPet(true)">Sim</button>
-            <button id="btn-pet-nao" class="toggle-btn active" onclick="setPet(false)">Não</button>
-          </div>
-        </div>
-        <div class="form-col">
-          <label class="form-label">TEM CRIANÇAS?</label>
-          <div class="toggle-group">
-            <button id="btn-criancas-sim" class="toggle-btn" onclick="setCriancas(true)">Sim</button>
-            <button id="btn-criancas-nao" class="toggle-btn active" onclick="setCriancas(false)">Não</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-col">
-          <label class="form-label">QUARTOS</label>
-          <div class="counter-box">
-            <button class="counter-btn" onclick="updateCounter('quartos', -1)">-</button>
-            <span id="cnt-quartos" style="font-weight: bold;">0</span>
-            <button class="counter-btn" onclick="updateCounter('quartos', 1)">+</button>
-          </div>
-        </div>
-        <div class="form-col">
-          <label class="form-label">LAVABO</label>
-          <div class="counter-box">
-            <button class="counter-btn" onclick="updateCounter('lavabo', -1)">-</button>
-            <span id="cnt-lavabo" style="font-weight: bold;">0</span>
-            <button class="counter-btn" onclick="updateCounter('lavabo', 1)">+</button>
-          </div>
-        </div>
-        <div class="form-col">
-          <label class="form-label">SALAS</label>
-          <div class="counter-box">
-            <button class="counter-btn" onclick="updateCounter('salas', -1)">-</button>
-            <span id="cnt-salas" style="font-weight: bold;">0</span>
-            <button class="counter-btn" onclick="updateCounter('salas', 1)">+</button>
-          </div>
-        </div>
-      </div>
-
       <div class="form-group">
         <label class="form-label">BANHEIROS (MÁX. 5)</label>
         <div id="bathrooms-container"></div>
         <button class="btn-add-sub" onclick="addBathroom()">+ adicionar banheiro</button>
       </div>
 
-      <div class="form-group" style="margin-top: 14px;">
-        <label class="form-label">PISO</label>
-        <div class="toggle-group" id="piso-toggle">
-          <button class="toggle-btn active" onclick="setPiso('Piso', this)">Piso</button>
-          <button class="toggle-btn" onclick="setPiso('Carpet', this)">Carpet</button>
-          <button class="toggle-btn" onclick="setPiso('Madeira', this)">Madeira</button>
-          <button class="toggle-btn" onclick="setPiso('Misto', this)">Misto</button>
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-col">
-          <label class="form-label">TEMPO ESTIMADO (1ª LIMPEZA)</label>
-          <input type="text" id="v-tempo-1" class="form-input" placeholder="ex: 5h">
-        </div>
-        <div class="form-col">
-          <label class="form-label">TEMPO COMBINADO (RECORRENTE)</label>
-          <input type="number" id="v-tempo-comb" class="form-input" placeholder="ex: 3" oninput="calculateVisitTotal()">
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">VALOR POR HORA × TOTAL (LIGADOS)</label>
-        <div class="calc-row">
-          <input type="number" id="v-rate" class="form-input" style="width: 80px;" placeholder="£/HORA" oninput="calculateVisitTotal()">
-          <span style="color:var(--text-muted);">× <span id="lbl-horas-comb">0</span> =</span>
-          <strong style="font-size: 18px; color: var(--primary);" id="lbl-total-visita">£0.00</strong>
-        </div>
-      </div>
-
       <button class="btn btn-primary" onclick="saveVisit()" style="margin-top: 15px;">Salvar Visita</button>
     </div>
 
-    <!-- LISTA DE VISITAS SALVAS -->
     <div class="section-box">
       <h3 style="color: var(--primary); margin-bottom: 12px;">Visitas Guardadas</h3>
       <div id="saved-visits-list"></div>
@@ -270,18 +179,25 @@
 
   <!-- ABA FINANCEIRO -->
   <div id="tab-financeiro" style="display:none;">
-    <!-- BLOCO MENSAL EXCLUSIVO (Bernadette e Bushra) -->
+    <!-- BLOCO MENSAL EXCLUSIVO (Dia 01 ao Último Dia do Mês) -->
     <div class="mensal-box">
-      <h3 style="color: #c084fc; margin-bottom: 8px;">🗓 Acumulado de Clientes Mensais (Bernadette & Bushra)</h3>
-      <p style="font-size: 12px; color: #e9d5ff; margin-bottom: 10px;">Somatório de horas executadas e valores mensais fixos:</p>
+      <h3 style="color: #c084fc; margin-bottom: 8px;">🗓 Clientes Mensais (Bernadette & Bushra)</h3>
+      <p style="font-size: 12px; color: #e9d5ff; margin-bottom: 10px;">Contagem estrita do dia 01 ao último dia do mês corrente:</p>
       <div id="financial-summary-mensal"></div>
     </div>
 
     <!-- BLOCO SEMANAL DE ENTRADAS -->
     <div class="section-box">
-      <h3 style="color: var(--primary); margin-bottom: 12px;">Resumo Financeiro Semanal (Entradas Correntes)</h3>
+      <h3 style="color: var(--primary); margin-bottom: 12px;">Resumo Financeiro Semanal</h3>
       <div id="financial-summary-days"></div>
       <div id="financial-summary-total" style="font-size: 15px; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--border-color);"></div>
+    </div>
+
+    <!-- HISTÓRICO ACUMULADO MÊS A MÊS -->
+    <div class="section-box">
+      <h3 style="color: var(--accent); margin-bottom: 12px;">📊 Contabilidade Acumulada (Mês a Mês)</h3>
+      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">Histórico completo de faturamento e pagamentos de funcionários:</p>
+      <div id="financial-monthly-history"></div>
     </div>
   </div>
 
@@ -301,7 +217,6 @@
   </div>
 
   <script>
-    // CONFIGURAÇÃO DO FIREBASE
     const firebaseConfig = {
       apiKey: "AIzaSyCgqJMnBcwCI4eEEOS3wxa3uFrmcXMN9dA",
       authDomain: "cleaningapp-f7e58.firebaseapp.com",
@@ -315,12 +230,12 @@
     const db = firebase.database();
     const appDataRef = db.ref('sm_cleaners_app_data');
 
+    // Mapeamento de datas exatas por dia e ano
     const dateMap = {
-      semana1: { segunda: "28/09", terca: "29/09", quarta: "30/09", quinta: "01/10", sexta: "02/10" },
-      semana2: { segunda: "05/10", terca: "06/10", quarta: "07/10", quinta: "08/10", sexta: "09/10" }
+      semana1: { segunda: "2026-09-28", terca: "2026-09-29", quarta: "2026-09-30", quinta: "2026-10-01", sexta: "2026-10-02" },
+      semana2: { segunda: "2026-10-05", terca: "2026-10-06", quarta: "2026-10-07", quinta: "2026-10-08", sexta: "2026-10-09" }
     };
 
-    // Clientes que pagam pacote mensal fixo
     const fixedMensalClients = ["Bernadette", "Bushra"];
 
     const clientAddresses = {
@@ -376,9 +291,7 @@
     function openMaps(clientName) {
       const address = clientAddresses[clientName];
       if (address) {
-        const encodedAddress = encodeURIComponent(address);
-        const mapsUrl = `https://maps.apple.com/?q=${encodedAddress}`;
-        window.open(mapsUrl, '_blank');
+        window.open(`https://maps.apple.com/?q=${encodeURIComponent(address)}`, '_blank');
       } else {
         alert(`Endereço de ${clientName} não encontrado.`);
       }
@@ -405,7 +318,9 @@
             { id: "s1_seg_6", name: "Rachel Fazendinha", horario: "16:10", horarioFim: "17:10", hours: 3, value: 63, pay: "cash", mensal: false, workers: [] },
             { id: "s1_seg_7", name: "Jeanette", horario: "17:20", horarioFim: "18:20", hours: 2, value: 42, pay: "cash", mensal: false, workers: [] }
           ],
-          terca: [], quarta: [], quinta: [], sexta: []
+          quinta: [
+            { id: "s1_qui_1", name: "Bernadette", horario: "08:00", horarioFim: "10:30", hours: 10, value: 200, pay: "transfer", mensal: true, workers: ["Roberta", "Lorruama"] }
+          ]
         },
         semana2: {
           segunda: [
@@ -420,23 +335,14 @@
           terca: [
             { id: "s2_ter_1", name: "Rhiannon", horario: "08:00", horarioFim: "09:00", hours: 4, value: 84, pay: "cash", mensal: false, workers: [] },
             { id: "s2_ter_2", name: "Sasha", horario: "09:10", horarioFim: "10:10", hours: 3, value: 63, pay: "cash", mensal: false, workers: [] },
-            { id: "s2_ter_3", name: "Phoebe", horario: "10:20", horarioFim: "11:20", hours: 3, value: 63, pay: "cash", mensal: false, workers: [] },
-            { id: "s2_ter_4", name: "Rod", horario: "11:30", horarioFim: "12:30", hours: 3, value: 63, pay: "transfer", mensal: false, workers: [] },
-            { id: "s2_ter_5", name: "Caroline", horario: "12:40", horarioFim: "13:40", hours: 2, value: 42, pay: "cash", mensal: false, workers: [] },
-            { id: "s2_ter_6", name: "Carol", horario: "13:50", horarioFim: "14:50", hours: 3, value: 63, pay: "transfer", mensal: false, workers: [] },
-            { id: "s2_ter_7", name: "Brent", horario: "15:00", horarioFim: "16:00", hours: 4, value: 84, pay: "transfer", mensal: false, workers: [] },
-            { id: "s2_ter_8", name: "Vanya", horario: "16:10", horarioFim: "17:30", hours: 5, value: 100, pay: "transfer", mensal: false, workers: [] }
-          ],
-          quarta: [], quinta: [], sexta: []
-        },
-        outros: { outros: [] }
+            { id: "s2_ter_3", name: "Phoebe", horario: "10:20", horarioFim: "11:20", hours: 3, value: 63, pay: "cash", mensal: false, workers: [] }
+          ]
+        }
       }
     };
 
     let localSaved = localStorage.getItem('sm_cleaners_app_data') || localStorage.getItem('appData');
     let appData = localSaved ? JSON.parse(localSaved) : exactListData;
-
-    let visitForm = { pet: false, criancas: false, quartos: 0, lavabo: 0, salas: 0, bathrooms: [{ type: 'Shower' }], piso: 'Piso' };
 
     appDataRef.on('value', (snapshot) => {
       const val = snapshot.val();
@@ -449,9 +355,6 @@
         saveData();
       }
       renderAll();
-    }, (error) => {
-      document.getElementById('sync-status').innerText = '🟡 Modo Offline (Salvo Localmente)';
-      console.error(error);
     });
 
     function saveData() {
@@ -507,8 +410,9 @@
         let totalHours = clients.reduce((acc, c) => acc + (parseFloat(c.hours) || 0), 0);
         let totalValue = clients.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
 
-        let dateStr = (dateMap[appData.selectedWeekKey] && dateMap[appData.selectedWeekKey][day]) ? ` (${dateMap[appData.selectedWeekKey][day]})` : '';
-        let titleDisplay = (day === "outros") ? "Clientes Mensais / Outros" : day.charAt(0).toUpperCase() + day.slice(1) + "-feira" + dateStr;
+        let ISOdate = (dateMap[appData.selectedWeekKey] && dateMap[appData.selectedWeekKey][day]) ? dateMap[appData.selectedWeekKey][day] : '';
+        let displayDate = ISOdate ? ` (${ISOdate.slice(8,10)}/${ISOdate.slice(5,7)})` : '';
+        let titleDisplay = (day === "outros") ? "Clientes Mensais / Outros" : day.charAt(0).toUpperCase() + day.slice(1) + "-feira" + displayDate;
 
         let workerHoursDay = {};
         clients.forEach(c => {
@@ -534,7 +438,6 @@
 
         clients.forEach((client, idx) => {
           let numWorkers = (client.workers || []).length;
-          
           let computedEnd = calculateEndTime(client.horario, client.hours, numWorkers);
           if (computedEnd && (!client.horarioFim || client.autoTime !== false)) {
             client.horarioFim = computedEnd;
@@ -603,28 +506,24 @@
     function updateClientTime(day, idx, field, val) {
       appData.weeks[appData.selectedWeekKey][day][idx][field] = val;
       if (field === 'horarioFim') appData.weeks[appData.selectedWeekKey][day][idx].autoTime = false;
-      saveData();
-      renderAll();
+      saveData(); renderAll();
     }
 
     function updateClientField(day, idx, field, val) {
       appData.weeks[appData.selectedWeekKey][day][idx][field] = parseFloat(val) || 0;
-      saveData();
-      renderAll();
+      saveData(); renderAll();
     }
 
     function togglePayType(day, idx) {
       let current = appData.weeks[appData.selectedWeekKey][day][idx].pay || 'cash';
       appData.weeks[appData.selectedWeekKey][day][idx].pay = (current === 'cash') ? 'transfer' : 'cash';
-      saveData();
-      renderAll();
+      saveData(); renderAll();
     }
 
     function toggleMensal(day, idx) {
       let current = appData.weeks[appData.selectedWeekKey][day][idx].mensal;
       appData.weeks[appData.selectedWeekKey][day][idx].mensal = !current;
-      saveData();
-      renderAll();
+      saveData(); renderAll();
     }
 
     function moveClient(day, index, direction) {
@@ -634,8 +533,7 @@
       const temp = list[index];
       list[index] = list[targetIndex];
       list[targetIndex] = temp;
-      saveData();
-      renderAll();
+      saveData(); renderAll();
     }
 
     function toggleWorker(day, clientIdx, workerName) {
@@ -644,15 +542,13 @@
       const wIdx = client.workers.indexOf(workerName);
       if (wIdx > -1) client.workers.splice(wIdx, 1);
       else client.workers.push(workerName);
-      saveData();
-      renderAll();
+      saveData(); renderAll();
     }
 
     function deleteClient(day, idx) {
       if (confirm("Deseja remover este cliente?")) {
         appData.weeks[appData.selectedWeekKey][day].splice(idx, 1);
-        saveData();
-        renderAll();
+        saveData(); renderAll();
       }
     }
 
@@ -667,15 +563,9 @@
         appData.weeks[appData.selectedWeekKey][day].push({
           id: Math.random().toString(36).substr(2, 7),
           name: name,
-          horario: "08:00",
-          horarioFim: "",
-          hours: parseFloat(hours) || 0,
-          value: parseFloat(value) || 0,
-          pay: "cash",
-          workers: []
+          horario: "08:00", horarioFim: "", hours: parseFloat(hours) || 0, value: parseFloat(value) || 0, pay: "cash", workers: []
         });
-        saveData();
-        renderAll();
+        saveData(); renderAll();
       }
     }
 
@@ -687,10 +577,7 @@
       let memberHoursMap = {};
       let memberPayMap = {};
 
-      appData.teamMembers.forEach(m => {
-        memberHoursMap[m.name] = 0;
-        memberPayMap[m.name] = 0;
-      });
+      appData.teamMembers.forEach(m => { memberHoursMap[m.name] = 0; memberPayMap[m.name] = 0; });
 
       Object.keys(currentWeekDays).forEach(day => {
         (currentWeekDays[day] || []).forEach(client => {
@@ -699,7 +586,6 @@
 
           let houseValue = parseFloat(client.value) || 0;
           let totalHours = parseFloat(client.hours) || 0;
-
           let normalWorkers = [];
           let ownersAssigned = [];
 
@@ -710,8 +596,8 @@
           });
 
           let hoursPerPerson = totalHours / assigned.length;
-
           let totalPaidToNormalWorkers = 0;
+
           normalWorkers.forEach(wName => {
             let mObj = appData.teamMembers.find(t => t.name === wName);
             let payForThisHouse = hoursPerPerson * mObj.rate;
@@ -756,27 +642,30 @@
       const mensalDiv = document.getElementById('financial-summary-mensal');
       const daysDiv = document.getElementById('financial-summary-days');
       const totalDiv = document.getElementById('financial-summary-total');
+      const historyDiv = document.getElementById('financial-monthly-history');
       
-      daysDiv.innerHTML = '';
-      mensalDiv.innerHTML = '';
+      daysDiv.innerHTML = ''; mensalDiv.innerHTML = ''; historyDiv.innerHTML = '';
 
-      let mensalStats = {
-        "Bernadette": { hours: 0, value: 0, count: 0 },
-        "Bushra": { hours: 0, value: 0, count: 0 }
-      };
+      let mensalStats = { "Bernadette": { hours: 0, value: 0, count: 0 }, "Bushra": { hours: 0, value: 0, count: 0 } };
 
-      // 1. Soma horas e valores EXCLUSIVAMENTE da Bernadette e da Bushra de todas as semanas
+      // Considera apenas o mês atual (Outubro / 2026) estritamente do dia 01 ao último dia do mês
+      const currentYearMonth = "2026-10";
+
       Object.keys(appData.weeks).forEach(wKey => {
         const wObj = appData.weeks[wKey] || {};
         Object.keys(wObj).forEach(dKey => {
-          (wObj[dKey] || []).forEach(c => {
-            if (fixedMensalClients.includes(c.name)) {
-              if (!mensalStats[c.name]) mensalStats[c.name] = { hours: 0, value: 0, count: 0 };
-              mensalStats[c.name].hours += parseFloat(c.hours) || 0;
-              mensalStats[c.name].value += parseFloat(c.value) || 0;
-              mensalStats[c.name].count += 1;
-            }
-          });
+          let ISOdate = (dateMap[wKey] && dateMap[wKey][dKey]) ? dateMap[wKey][dKey] : '';
+          
+          if (ISOdate && ISOdate.startsWith(currentYearMonth)) {
+            (wObj[dKey] || []).forEach(c => {
+              if (fixedMensalClients.includes(c.name)) {
+                if (!mensalStats[c.name]) mensalStats[c.name] = { hours: 0, value: 0, count: 0 };
+                mensalStats[c.name].hours += parseFloat(c.hours) || 0;
+                mensalStats[c.name].value += parseFloat(c.value) || 0;
+                mensalStats[c.name].count += 1;
+              }
+            });
+          }
         });
       });
 
@@ -789,7 +678,7 @@
         totalMensalGeralHoras += st.hours;
         return `
           <div style="display:flex; justify-content:space-between; align-items:center; font-size:13px; color:#f3e8ff; margin-bottom:6px; background:#1e1035; padding:8px 10px; border-radius:6px;">
-            <span>👤 <strong>${name}</strong> (${st.count} limpezas)</span>
+            <span>👤 <strong>${name}</strong> (${st.count} limpezas este mês)</span>
             <span>⏱️ ${st.hours.toFixed(1)}h | <strong>£${st.value.toFixed(2)}</strong></span>
           </div>
         `;
@@ -798,11 +687,11 @@
       mensalDiv.innerHTML = mensalHTML + `
         <div style="margin-top:10px; padding-top:8px; border-top:1px dashed #a855f7; font-size:14px; color:#fff; display:flex; justify-content:space-between;">
           <span>⏱️ Total Horas Mensais: <strong>${totalMensalGeralHoras.toFixed(1)}h</strong></span>
-          <strong style="color:#c084fc;">Total Acumulado: £${totalMensalGeralVal.toFixed(2)}</strong>
+          <strong style="color:#c084fc;">Faturamento Mês (01 a 31): £${totalMensalGeralVal.toFixed(2)}</strong>
         </div>
       `;
 
-      // 2. Fluxo de caixa semanal (exclui Bernadette e Bushra do faturamento semanal para não duplicar na contagem de caixa)
+      // Fluxo Semanal
       const currentWeekDays = appData.weeks[appData.selectedWeekKey] || {};
       const dayKeys = (appData.selectedWeekKey === 'outros') ? ["outros"] : ["segunda", "terca", "quarta", "quinta", "sexta"];
 
@@ -825,8 +714,9 @@
         totalSemanaCash += dayCash;
         totalSemanaTransfer += dayTransfer;
 
-        let dateStr = (dateMap[appData.selectedWeekKey] && dateMap[appData.selectedWeekKey][day]) ? ` (${dateMap[appData.selectedWeekKey][day]})` : '';
-        let dayTitle = (day === "outros") ? "Outros / Mensal" : day.charAt(0).toUpperCase() + day.slice(1) + "-feira" + dateStr;
+        let ISOdate = (dateMap[appData.selectedWeekKey] && dateMap[appData.selectedWeekKey][day]) ? dateMap[appData.selectedWeekKey][day] : '';
+        let displayDate = ISOdate ? ` (${ISOdate.slice(8,10)}/${ISOdate.slice(5,7)})` : '';
+        let dayTitle = (day === "outros") ? "Outros / Mensal" : day.charAt(0).toUpperCase() + day.slice(1) + "-feira" + displayDate;
 
         daysDiv.innerHTML += `
           <div class="fin-day-card">
@@ -845,154 +735,66 @@
       totalDiv.innerHTML = `
         <p>💵 <strong>Total Cash na Semana:</strong> £${totalSemanaCash.toFixed(2)}</p>
         <p>🏦 <strong>Total Transferência na Semana:</strong> £${totalSemanaTransfer.toFixed(2)}</p>
-        <p style="font-size:18px; color:var(--primary); margin-top:8px;">💰 <strong>Entradas da Semana (Sem Mensais Fixos): £${totalGeralSemana.toFixed(2)}</strong></p>
+        <p style="font-size:18px; color:var(--primary); margin-top:8px;">💰 <strong>Entradas da Semana: £${totalGeralSemana.toFixed(2)}</strong></p>
       `;
-    }
 
-    /* VISITAS */
-    function setPet(val) {
-      visitForm.pet = val;
-      document.getElementById('btn-pet-sim').className = val ? 'toggle-btn active' : 'toggle-btn';
-      document.getElementById('btn-pet-nao').className = !val ? 'toggle-btn active' : 'toggle-btn';
-    }
+      // 3. CONTABILIDADE ACUMULADA MÊS A MÊS (A partir da semana passada 28/09/2026)
+      let monthlyData = {};
 
-    function setCriancas(val) {
-      visitForm.criancas = val;
-      document.getElementById('btn-criancas-sim').className = val ? 'toggle-btn active' : 'toggle-btn';
-      document.getElementById('btn-criancas-nao').className = !val ? 'toggle-btn active' : 'toggle-btn';
-    }
+      Object.keys(appData.weeks).forEach(wKey => {
+        const wObj = appData.weeks[wKey] || {};
+        Object.keys(wObj).forEach(dKey => {
+          let ISOdate = (dateMap[wKey] && dateMap[wKey][dKey]) ? dateMap[wKey][dKey] : '2026-10-01';
+          let mKey = ISOdate.slice(0,7); // Formato YYYY-MM
+          
+          if (!monthlyData[mKey]) {
+            monthlyData[mKey] = { totalRevenue: 0, workersPay: {}, weeksData: {} };
+            appData.teamMembers.forEach(tm => monthlyData[mKey].workersPay[tm.name] = 0);
+          }
 
-    function updateCounter(key, val) {
-      visitForm[key] = Math.max(0, visitForm[key] + val);
-      document.getElementById(`cnt-${key}`).innerText = visitForm[key];
-    }
+          (wObj[dKey] || []).forEach(c => {
+            let val = parseFloat(c.value) || 0;
+            monthlyData[mKey].totalRevenue += val;
 
-    function setPiso(val, btn) {
-      visitForm.piso = val;
-      document.querySelectorAll('#piso-toggle button').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-    }
+            let assigned = c.workers || [];
+            if (assigned.length > 0) {
+              let hPerPerson = (parseFloat(c.hours) || 0) / assigned.length;
+              assigned.forEach(wName => {
+                let mObj = appData.teamMembers.find(t => t.name === wName);
+                if (mObj && !mObj.isOwner) {
+                  monthlyData[mKey].workersPay[wName] = (monthlyData[mKey].workersPay[wName] || 0) + (hPerPerson * mObj.rate);
+                }
+              });
+            }
+          });
+        });
+      });
 
-    function renderBathrooms() {
-      const container = document.getElementById('bathrooms-container');
-      container.innerHTML = '';
-      visitForm.bathrooms.forEach((b, idx) => {
-        container.innerHTML += `
-          <div class="bathroom-row">
-            <span style="font-size:13px; font-weight:600;">Banheiro ${idx + 1}</span>
-            <div class="toggle-group" style="width: 180px;">
-              <button class="toggle-btn ${b.type === 'Shower' ? 'active' : ''}" onclick="setBathType(${idx}, 'Shower')">Shower</button>
-              <button class="toggle-btn ${b.type === 'Bath' ? 'active' : ''}" onclick="setBathType(${idx}, 'Bath')">Bath</button>
+      Object.keys(monthlyData).sort().reverse().forEach(mKey => {
+        let mObj = monthlyData[mKey];
+        let [year, month] = mKey.split('-');
+        let monthName = new Date(year, month - 1, 1).toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+        
+        let workersHTML = Object.keys(mObj.workersPay).map(wName => {
+          let val = mObj.workersPay[wName];
+          return val > 0 ? `<p>👷 <strong>${wName}:</strong> £${val.toFixed(2)}</p>` : '';
+        }).join('');
+
+        let totalWorkersPaid = Object.values(mObj.workersPay).reduce((a, b) => a + b, 0);
+        let netProfit = mObj.totalRevenue - totalWorkersPaid;
+
+        historyDiv.innerHTML += `
+          <div class="history-card">
+            <div class="history-month-title">📅 ${monthName.toUpperCase()}</div>
+            <p>💰 <strong>Faturamento Total:</strong> £${mObj.totalRevenue.toFixed(2)}</p>
+            <div style="margin:8px 0; padding:6px 10px; background:#1e293b; border-radius:6px; font-size:12px;">
+              ${workersHTML || '<p style="color:var(--text-muted)">Sem pagamentos a funcionários.</p>'}
             </div>
-            <button onclick="removeBathroom(${idx})" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-weight:bold;">✕</button>
+            <p>💸 <strong>Total PAGO a Funcionários:</strong> £${totalWorkersPaid.toFixed(2)}</p>
+            <p style="font-size:15px; color:var(--primary); margin-top:6px;">📈 <strong>Lucro Líquido Acumulado: £${netProfit.toFixed(2)}</strong></p>
           </div>
         `;
       });
-    }
-
-    function addBathroom() {
-      if (visitForm.bathrooms.length < 5) {
-        visitForm.bathrooms.push({ type: 'Shower' });
-        renderBathrooms();
-      }
-    }
-
-    function removeBathroom(idx) {
-      visitForm.bathrooms.splice(idx, 1);
-      renderBathrooms();
-    }
-
-    function setBathType(idx, type) {
-      visitForm.bathrooms[idx].type = type;
-      renderBathrooms();
-    }
-
-    function calculateVisitTotal() {
-      const hrs = parseFloat(document.getElementById('v-tempo-comb').value) || 0;
-      const rate = parseFloat(document.getElementById('v-rate').value) || 0;
-      document.getElementById('lbl-horas-comb').innerText = hrs;
-      document.getElementById('lbl-total-visita').innerText = `£${(hrs * rate).toFixed(2)}`;
-    }
-
-    function clearVisitForm() {
-      document.getElementById('v-nome').value = '';
-      document.getElementById('v-endereco').value = '';
-      document.getElementById('v-prioridades').value = '';
-      document.getElementById('v-tempo-1').value = '';
-      document.getElementById('v-tempo-comb').value = '';
-      document.getElementById('v-rate').value = '';
-      visitForm = { pet: false, criancas: false, quartos: 0, lavabo: 0, salas: 0, bathrooms: [{ type: 'Shower' }], piso: 'Piso' };
-      setPet(false); setCriancas(false);
-      document.getElementById('cnt-quartos').innerText = 0;
-      document.getElementById('cnt-lavabo').innerText = 0;
-      document.getElementById('cnt-salas').innerText = 0;
-      renderBathrooms();
-      calculateVisitTotal();
-    }
-
-    function saveVisit() {
-      const nome = document.getElementById('v-nome').value;
-      if (!nome) { alert("Por favor, digite o nome do cliente."); return; }
-
-      const newVisit = {
-        id: Math.random().toString(36).substr(2, 7),
-        nome: nome,
-        endereco: document.getElementById('v-endereco').value,
-        prioridades: document.getElementById('v-prioridades').value,
-        pet: visitForm.pet,
-        criancas: visitForm.criancas,
-        quartos: visitForm.quartos,
-        lavabo: visitForm.lavabo,
-        salas: visitForm.salas,
-        bathrooms: visitForm.bathrooms,
-        piso: visitForm.piso,
-        tempo1: document.getElementById('v-tempo-1').value,
-        tempoComb: document.getElementById('v-tempo-comb').value,
-        rate: document.getElementById('v-rate').value,
-        total: (parseFloat(document.getElementById('v-tempo-comb').value) || 0) * (parseFloat(document.getElementById('v-rate').value) || 0)
-      };
-
-      if (!appData.visits) appData.visits = [];
-      appData.visits.push(newVisit);
-      saveData();
-      clearVisitForm();
-      renderAll();
-      alert("Visita salva com sucesso!");
-    }
-
-    function renderSavedVisits() {
-      const container = document.getElementById('saved-visits-list');
-      container.innerHTML = '';
-      if (!appData.visits || appData.visits.length === 0) {
-        container.innerHTML = `<p style="color:var(--text-muted); font-size:13px;">Nenhuma visita guardada.</p>`;
-        return;
-      }
-
-      appData.visits.forEach((v, idx) => {
-        container.innerHTML += `
-          <div class="card" style="margin-bottom:12px;">
-            <div class="card-header">
-              <span class="client-name">${v.nome}</span>
-              <button onclick="deleteVisit(${idx})" style="background:none; border:none; color:#ef4444; font-size:12px; cursor:pointer; font-weight:600;">Remover</button>
-            </div>
-            <div style="font-size:13px; color:var(--text-muted); line-height:1.6;">
-              <p>📍 <strong>Endereço:</strong> ${v.endereco || 'N/A'}</p>
-              <p>📌 <strong>Prioridades:</strong> ${v.prioridades || 'N/A'}</p>
-              <p>🐾 Pet: ${v.pet ? 'Sim' : 'Não'} | 👶 Crianças: ${v.criancas ? 'Sim' : 'Não'}</p>
-              <p>🛏 Quartos: ${v.quartos} | 🚪 Lavabo: ${v.lavabo} | 🛋️ Salas: ${v.salas} | 🚿 Banheiros: ${v.bathrooms ? v.bathrooms.length : 0}</p>
-              <p>🪵 Piso: ${v.piso} | ⏱️ Combinado: ${v.tempoComb}h | 💰 Total: £${(v.total || 0).toFixed(2)}</p>
-            </div>
-          </div>
-        `;
-      });
-    }
-
-    function deleteVisit(idx) {
-      if (confirm("Remover esta visita guardada?")) {
-        appData.visits.splice(idx, 1);
-        saveData();
-        renderAll();
-      }
     }
 
     function switchTab(tab) {
@@ -1000,12 +802,10 @@
         const el = document.getElementById(`tab-${t}`);
         if (el) el.style.display = (t === tab) ? 'block' : 'none';
       });
-
       document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
       event.target.classList.add('active');
     }
 
-    /* BACKUP / RESTAURAÇÃO COMPATÍVEL COM SAFARI & FIREBASE */
     function exportarBackupJSON() {
       let backupData = appData || {};
       const dataStr = JSON.stringify(backupData, null, 2);
@@ -1026,23 +826,14 @@
       reader.onload = function(e) {
         try {
           const data = JSON.parse(e.target.result);
-          if (!data || !data.weeks) {
-            alert('Ficheiro de backup inválido.');
-            return;
-          }
-          appData = data;
-          saveData();
-          renderAll();
+          if (!data || !data.weeks) { alert('Ficheiro de backup inválido.'); return; }
+          appData = data; saveData(); renderAll();
           alert('Backup restaurado e sincronizado com sucesso!');
           setTimeout(() => { location.reload(); }, 300);
-        } catch (err) {
-          alert('Erro ao carregar ficheiro: ' + err.message);
-        }
+        } catch (err) { alert('Erro ao carregar ficheiro: ' + err.message); }
       };
       reader.readAsText(file);
     }
-
-    renderBathrooms();
   </script>
 </body>
 </html>
