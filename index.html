@@ -270,10 +270,10 @@
 
   <!-- ABA FINANCEIRO -->
   <div id="tab-financeiro" style="display:none;">
-    <!-- BLOCO MENSAL SEPARADO -->
+    <!-- BLOCO MENSAL EXCLUSIVO (Bernadette e Bushra) -->
     <div class="mensal-box">
-      <h3 style="color: #c084fc; margin-bottom: 8px;">🗓 Clientes Mensais (Contador Mês Atual)</h3>
-      <p style="font-size: 12px; color: #e9d5ff; margin-bottom: 10px;">Faturamento fixo das clientes mensais (ex: Bernadette e Bushra):</p>
+      <h3 style="color: #c084fc; margin-bottom: 8px;">🗓 Acumulado de Clientes Mensais (Bernadette & Bushra)</h3>
+      <p style="font-size: 12px; color: #e9d5ff; margin-bottom: 10px;">Somatório de horas executadas e valores mensais fixos:</p>
       <div id="financial-summary-mensal"></div>
     </div>
 
@@ -319,6 +319,9 @@
       semana1: { segunda: "28/09", terca: "29/09", quarta: "30/09", quinta: "01/10", sexta: "02/10" },
       semana2: { segunda: "05/10", terca: "06/10", quarta: "07/10", quinta: "08/10", sexta: "09/10" }
     };
+
+    // Clientes que pagam pacote mensal fixo
+    const fixedMensalClients = ["Bernadette", "Bushra"];
 
     const clientAddresses = {
       "Bernadette": "York Place, BA15PU",
@@ -543,6 +546,8 @@
             timePerPersonText = `➔ ${hoursPerPerson.toFixed(2)}h na casa (${numWorkers} ${numWorkers === 1 ? 'pessoa' : 'pessoas'})`;
           }
 
+          let isFixedMensal = fixedMensalClients.includes(client.name);
+
           dayHtml += `
             <div class="card">
               <div class="card-header">
@@ -570,7 +575,7 @@
                 </div>
                 <div>
                   <span class="badge badge-${client.pay || 'cash'}" onclick="togglePayType('${day}', ${idx})">${client.pay || 'CASH'}</span>
-                  <span class="badge ${client.mensal ? 'badge-mensal' : ''}" style="${!client.mensal ? 'background:#334155; color:#94a3b8;' : ''}" onclick="toggleMensal('${day}', ${idx})">MENSAL</span>
+                  <span class="badge ${isFixedMensal || client.mensal ? 'badge-mensal' : ''}" style="${!isFixedMensal && !client.mensal ? 'background:#334155; color:#94a3b8;' : ''}" onclick="toggleMensal('${day}', ${idx})">MENSAL</span>
                 </div>
               </div>
 
@@ -755,38 +760,49 @@
       daysDiv.innerHTML = '';
       mensalDiv.innerHTML = '';
 
-      let mensalMap = {};
-      let totalMensalGeral = 0;
+      let mensalStats = {
+        "Bernadette": { hours: 0, value: 0, count: 0 },
+        "Bushra": { hours: 0, value: 0, count: 0 }
+      };
 
-      // 1. Mapeia todos os clientes com a etiqueta MENSAL de todas as semanas para criar o contador mensal unificado
+      // 1. Soma horas e valores EXCLUSIVAMENTE da Bernadette e da Bushra de todas as semanas
       Object.keys(appData.weeks).forEach(wKey => {
         const wObj = appData.weeks[wKey] || {};
         Object.keys(wObj).forEach(dKey => {
           (wObj[dKey] || []).forEach(c => {
-            if (c.mensal) {
-              if (!mensalMap[c.name]) {
-                mensalMap[c.name] = parseFloat(c.value) || 0;
-                totalMensalGeral += parseFloat(c.value) || 0;
-              }
+            if (fixedMensalClients.includes(c.name)) {
+              if (!mensalStats[c.name]) mensalStats[c.name] = { hours: 0, value: 0, count: 0 };
+              mensalStats[c.name].hours += parseFloat(c.hours) || 0;
+              mensalStats[c.name].value += parseFloat(c.value) || 0;
+              mensalStats[c.name].count += 1;
             }
           });
         });
       });
 
-      let mensalHTML = Object.keys(mensalMap).map(name => `
-        <div style="display:flex; justify-shadow:space-between; justify-content:space-between; font-size:13px; color:#f3e8ff; margin-bottom:4px;">
-          <span>👤 ${name}:</span>
-          <strong>£${mensalMap[name].toFixed(2)} / mês</strong>
-        </div>
-      `).join('');
+      let totalMensalGeralVal = 0;
+      let totalMensalGeralHoras = 0;
+
+      let mensalHTML = Object.keys(mensalStats).map(name => {
+        let st = mensalStats[name];
+        totalMensalGeralVal += st.value;
+        totalMensalGeralHoras += st.hours;
+        return `
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:13px; color:#f3e8ff; margin-bottom:6px; background:#1e1035; padding:8px 10px; border-radius:6px;">
+            <span>👤 <strong>${name}</strong> (${st.count} limpezas)</span>
+            <span>⏱️ ${st.hours.toFixed(1)}h | <strong>£${st.value.toFixed(2)}</strong></span>
+          </div>
+        `;
+      }).join('');
 
       mensalDiv.innerHTML = mensalHTML + `
-        <div style="margin-top:8px; padding-top:6px; border-top:1px dashed #a855f7; font-size:14px; color:#fff;">
-          <strong>Total Faturamento Mensal Fixo: £${totalMensalGeral.toFixed(2)}</strong>
+        <div style="margin-top:10px; padding-top:8px; border-top:1px dashed #a855f7; font-size:14px; color:#fff; display:flex; justify-content:space-between;">
+          <span>⏱️ Total Horas Mensais: <strong>${totalMensalGeralHoras.toFixed(1)}h</strong></span>
+          <strong style="color:#c084fc;">Total Acumulado: £${totalMensalGeralVal.toFixed(2)}</strong>
         </div>
       `;
 
-      // 2. Calcula as entradas semanais de clientes SEM a etiqueta mensal (fluxo semanal)
+      // 2. Fluxo de caixa semanal (exclui Bernadette e Bushra do faturamento semanal para não duplicar na contagem de caixa)
       const currentWeekDays = appData.weeks[appData.selectedWeekKey] || {};
       const dayKeys = (appData.selectedWeekKey === 'outros') ? ["outros"] : ["segunda", "terca", "quarta", "quinta", "sexta"];
 
@@ -799,7 +815,7 @@
         let dayTransfer = 0;
 
         clients.forEach(c => {
-          if (!c.mensal) {
+          if (!fixedMensalClients.includes(c.name)) {
             let val = parseFloat(c.value) || 0;
             if (c.pay === 'transfer') dayTransfer += val;
             else dayCash += val;
@@ -829,7 +845,7 @@
       totalDiv.innerHTML = `
         <p>💵 <strong>Total Cash na Semana:</strong> £${totalSemanaCash.toFixed(2)}</p>
         <p>🏦 <strong>Total Transferência na Semana:</strong> £${totalSemanaTransfer.toFixed(2)}</p>
-        <p style="font-size:18px; color:var(--primary); margin-top:8px;">💰 <strong>Entradas da Semana: £${totalGeralSemana.toFixed(2)}</strong></p>
+        <p style="font-size:18px; color:var(--primary); margin-top:8px;">💰 <strong>Entradas da Semana (Sem Mensais Fixos): £${totalGeralSemana.toFixed(2)}</strong></p>
       `;
     }
 
