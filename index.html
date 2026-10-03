@@ -100,6 +100,7 @@
     .fin-day-card { background: #0f172a; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
     .fin-day-title { font-weight: bold; color: var(--primary); font-size: 14px; margin-bottom: 4px; }
     .fin-day-details { font-size: 12px; color: var(--text-muted); display: flex; justify-content: space-between; }
+    .mensal-box { background: #2d1a47; border: 1px solid var(--tag-mensal); border-radius: 10px; padding: 14px; margin-bottom: 16px; }
   </style>
 
   <!-- FIREBASE SDKs -->
@@ -269,8 +270,16 @@
 
   <!-- ABA FINANCEIRO -->
   <div id="tab-financeiro" style="display:none;">
+    <!-- BLOCO MENSAL SEPARADO -->
+    <div class="mensal-box">
+      <h3 style="color: #c084fc; margin-bottom: 8px;">🗓 Clientes Mensais (Contador Mês Atual)</h3>
+      <p style="font-size: 12px; color: #e9d5ff; margin-bottom: 10px;">Faturamento fixo das clientes mensais (ex: Bernadette e Bushra):</p>
+      <div id="financial-summary-mensal"></div>
+    </div>
+
+    <!-- BLOCO SEMANAL DE ENTRADAS -->
     <div class="section-box">
-      <h3 style="color: var(--primary); margin-bottom: 12px;">Resumo Financeiro por Dia</h3>
+      <h3 style="color: var(--primary); margin-bottom: 12px;">Resumo Financeiro Semanal (Entradas Correntes)</h3>
       <div id="financial-summary-days"></div>
       <div id="financial-summary-total" style="font-size: 15px; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--border-color);"></div>
     </div>
@@ -306,13 +315,11 @@
     const db = firebase.database();
     const appDataRef = db.ref('sm_cleaners_app_data');
 
-    // Mapeamento de datas exatas
     const dateMap = {
       semana1: { segunda: "28/09", terca: "29/09", quarta: "30/09", quinta: "01/10", sexta: "02/10" },
       semana2: { segunda: "05/10", terca: "06/10", quarta: "07/10", quinta: "08/10", sexta: "09/10" }
     };
 
-    // Dicionário com os Endereços dos Clientes para abrir no Apple Maps / Google Maps
     const clientAddresses = {
       "Bernadette": "York Place, BA15PU",
       "Bushra": "29 Meadow Park, Batheaston",
@@ -367,7 +374,6 @@
       const address = clientAddresses[clientName];
       if (address) {
         const encodedAddress = encodeURIComponent(address);
-        // Tenta abrir direto no Apple Maps no iPhone / Mac ou no Google Maps em outros dispositivos
         const mapsUrl = `https://maps.apple.com/?q=${encodedAddress}`;
         window.open(mapsUrl, '_blank');
       } else {
@@ -559,7 +565,7 @@
 
               <div class="card-body">
                 <div>
-                  ⏱️️ <input type="number" class="card-input-inline" value="${client.hours}" onchange="updateClientField('${day}', ${idx}, 'hours', this.value)"> h | 
+                  ⏱️ <input type="number" class="card-input-inline" value="${client.hours}" onchange="updateClientField('${day}', ${idx}, 'hours', this.value)"> h | 
                   £ <input type="number" class="card-input-inline" value="${client.value}" onchange="updateClientField('${day}', ${idx}, 'value', this.value)">
                 </div>
                 <div>
@@ -742,10 +748,45 @@
     }
 
     function renderFinancialSummary() {
+      const mensalDiv = document.getElementById('financial-summary-mensal');
       const daysDiv = document.getElementById('financial-summary-days');
       const totalDiv = document.getElementById('financial-summary-total');
+      
       daysDiv.innerHTML = '';
+      mensalDiv.innerHTML = '';
 
+      let mensalMap = {};
+      let totalMensalGeral = 0;
+
+      // 1. Mapeia todos os clientes com a etiqueta MENSAL de todas as semanas para criar o contador mensal unificado
+      Object.keys(appData.weeks).forEach(wKey => {
+        const wObj = appData.weeks[wKey] || {};
+        Object.keys(wObj).forEach(dKey => {
+          (wObj[dKey] || []).forEach(c => {
+            if (c.mensal) {
+              if (!mensalMap[c.name]) {
+                mensalMap[c.name] = parseFloat(c.value) || 0;
+                totalMensalGeral += parseFloat(c.value) || 0;
+              }
+            }
+          });
+        });
+      });
+
+      let mensalHTML = Object.keys(mensalMap).map(name => `
+        <div style="display:flex; justify-shadow:space-between; justify-content:space-between; font-size:13px; color:#f3e8ff; margin-bottom:4px;">
+          <span>👤 ${name}:</span>
+          <strong>£${mensalMap[name].toFixed(2)} / mês</strong>
+        </div>
+      `).join('');
+
+      mensalDiv.innerHTML = mensalHTML + `
+        <div style="margin-top:8px; padding-top:6px; border-top:1px dashed #a855f7; font-size:14px; color:#fff;">
+          <strong>Total Faturamento Mensal Fixo: £${totalMensalGeral.toFixed(2)}</strong>
+        </div>
+      `;
+
+      // 2. Calcula as entradas semanais de clientes SEM a etiqueta mensal (fluxo semanal)
       const currentWeekDays = appData.weeks[appData.selectedWeekKey] || {};
       const dayKeys = (appData.selectedWeekKey === 'outros') ? ["outros"] : ["segunda", "terca", "quarta", "quinta", "sexta"];
 
@@ -758,9 +799,11 @@
         let dayTransfer = 0;
 
         clients.forEach(c => {
-          let val = parseFloat(c.value) || 0;
-          if (c.pay === 'transfer') dayTransfer += val;
-          else dayCash += val;
+          if (!c.mensal) {
+            let val = parseFloat(c.value) || 0;
+            if (c.pay === 'transfer') dayTransfer += val;
+            else dayCash += val;
+          }
         });
 
         totalSemanaCash += dayCash;
@@ -781,12 +824,12 @@
         `;
       });
 
-      let totalGeral = totalSemanaCash + totalSemanaTransfer;
+      let totalGeralSemana = totalSemanaCash + totalSemanaTransfer;
 
       totalDiv.innerHTML = `
         <p>💵 <strong>Total Cash na Semana:</strong> £${totalSemanaCash.toFixed(2)}</p>
         <p>🏦 <strong>Total Transferência na Semana:</strong> £${totalSemanaTransfer.toFixed(2)}</p>
-        <p style="font-size:18px; color:var(--primary); margin-top:8px;">💰 <strong>Faturamento Geral: £${totalGeral.toFixed(2)}</strong></p>
+        <p style="font-size:18px; color:var(--primary); margin-top:8px;">💰 <strong>Entradas da Semana: £${totalGeralSemana.toFixed(2)}</strong></p>
       `;
     }
 
@@ -920,7 +963,7 @@
               <p>📍 <strong>Endereço:</strong> ${v.endereco || 'N/A'}</p>
               <p>📌 <strong>Prioridades:</strong> ${v.prioridades || 'N/A'}</p>
               <p>🐾 Pet: ${v.pet ? 'Sim' : 'Não'} | 👶 Crianças: ${v.criancas ? 'Sim' : 'Não'}</p>
-              <p>🛏️️ Quartos: ${v.quartos} | 🚪 Lavabo: ${v.lavabo} | 🛋️ Salas: ${v.salas} | 🚿 Banheiros: ${v.bathrooms ? v.bathrooms.length : 0}</p>
+              <p>🛏 Quartos: ${v.quartos} | 🚪 Lavabo: ${v.lavabo} | 🛋️ Salas: ${v.salas} | 🚿 Banheiros: ${v.bathrooms ? v.bathrooms.length : 0}</p>
               <p>🪵 Piso: ${v.piso} | ⏱️ Combinado: ${v.tempoComb}h | 💰 Total: £${(v.total || 0).toFixed(2)}</p>
             </div>
           </div>
