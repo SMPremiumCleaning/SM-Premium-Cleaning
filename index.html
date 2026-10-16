@@ -47,11 +47,18 @@
 
     .day-workers-summary { font-size: 11px; color: var(--accent); margin-bottom: 12px; background: #0f172a; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-color); }
 
-    .card { background: #0f172a; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-bottom: 10px; }
-    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-    .client-name { font-weight: 700; font-size: 16px; color: #fff; text-decoration: none; display: flex; align-items: center; gap: 5px; cursor: pointer; }
-    .client-name:hover { color: var(--primary); }
-    .actions { display: flex; gap: 4px; }
+    /* CARTÃO EXPANSÍVEL (ACORDEÃO) */
+    .card { background: #0f172a; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-bottom: 8px; transition: all 0.2s ease; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+    .client-title-row { display: flex; align-items: center; gap: 8px; }
+    .client-name { font-weight: 700; font-size: 15px; color: #fff; }
+    .toggle-arrow { font-size: 12px; color: var(--primary); font-weight: bold; }
+    
+    .card-details { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border-color); }
+    .card.expanded .card-details { display: block; }
+    .card.expanded { border-color: var(--primary); }
+
+    .actions { display: flex; gap: 4px; align-items: center; }
     .btn-icon { border: 1px solid var(--border-color); background: #1e293b; cursor: pointer; font-size: 11px; color: var(--text-muted); width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
 
     .card-body { font-size: 13px; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; }
@@ -80,7 +87,7 @@
     .section-box { background: #1e293b; border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
     .pay-cycle-box { background: #1e3a5f; border: 1px solid var(--primary); border-radius: 12px; padding: 14px; margin-bottom: 16px; }
 
-    /* FORMULÁRIO DE VISITAS RESTAURADO */
+    /* VISITAS */
     .form-group { margin-bottom: 14px; }
     .form-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; display: block; letter-spacing: 0.5px; }
     .form-input, .form-textarea { width: 100%; padding: 10px; background: #0f172a; border: 1px solid var(--border-color); border-radius: 6px; color: #fff; font-size: 14px; }
@@ -148,7 +155,6 @@
 
   <!-- ABA EQUIPE -->
   <div id="tab-equipe" style="display:none;">
-    <!-- 1. BLOCO DE CORTE DE PAGAMENTO (SEXTA ANTERIOR ATÉ QUINTA ATUAL) -->
     <div class="pay-cycle-box">
       <h3 style="color: var(--primary); margin-bottom: 6px; font-size: 16px;">💳 Fechamento da Folha (Pagamento de Sexta)</h3>
       <p id="pay-cycle-dates-label" style="font-size: 12px; color: #e2e8f0; margin-bottom: 12px;">Corte: Sexta anterior até Quinta-feira atual</p>
@@ -166,7 +172,6 @@
       </table>
     </div>
 
-    <!-- 2. PRODUÇÃO DA SEMANA CORRENTE (SEGUNDA A SEXTA) -->
     <div class="section-box">
       <h3 style="color: var(--text-main); margin-bottom: 12px; font-size: 15px;">📊 Produção da Semana Selecionada (Segunda a Sexta)</h3>
       <table class="team-table">
@@ -183,7 +188,7 @@
     </div>
   </div>
 
-  <!-- ABA VISITAS RESTAURADA COMPLETA -->
+  <!-- ABA VISITAS -->
   <div id="tab-visitas" style="display:none;">
     <div class="section-box" style="position: relative;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
@@ -401,10 +406,20 @@
       "Valerie": "8 Eden Park Close, Batheaston"
     };
 
-    function openMaps(clientName) {
+    function openMaps(clientName, event) {
+      if (event) event.stopPropagation();
       const address = clientAddresses[clientName];
       if (address) window.open(`https://maps.apple.com/?q=${encodeURIComponent(address)}`, '_blank');
       else alert(`Endereço de ${clientName} não encontrado.`);
+    }
+
+    function toggleCardExpand(cardId) {
+      const cardEl = document.getElementById(cardId);
+      if (cardEl) {
+        cardEl.classList.toggle('expanded');
+        const arrowEl = cardEl.querySelector('.toggle-arrow');
+        if (arrowEl) arrowEl.innerText = cardEl.classList.contains('expanded') ? '▲' : '▼';
+      }
     }
 
     function getCalculatedDate(weekKey, dayName, offset = 0) {
@@ -587,48 +602,58 @@
           }
 
           let isFixedMensal = fixedMensalClients.includes(client.name);
+          let cardDomId = `card_${day}_${idx}`;
 
           dayHtml += `
-            <div class="card">
-              <div class="card-header">
-                <a class="client-name" onclick="openMaps('${client.name}')" title="Clique para abrir no Maps">
-                  📍 ${client.name}
-                </a>
+            <div class="card" id="${cardDomId}">
+              <!-- CABEÇALHO RESUMIDO DO CARTÃO (CLIQUE PARA EXPANDIR) -->
+              <div class="card-header" onclick="toggleCardExpand('${cardDomId}')">
+                <div class="client-title-row">
+                  <span class="toggle-arrow">▼</span>
+                  <a class="client-name" onclick="openMaps('${client.name}', event)" title="Clique para abrir no Maps">
+                    📍 ${client.name}
+                  </a>
+                </div>
                 <div class="actions">
-                  <button class="btn-icon" onclick="moveClient('${day}', ${idx}, -1)">▲</button>
-                  <button class="btn-icon" onclick="moveClient('${day}', ${idx}, 1)">▼</button>
-                  <button class="btn-icon" onclick="deleteClient('${day}', ${idx})" style="color:#ef4444;">✕</button>
+                  <span class="badge badge-${client.pay || 'cash'}">${client.pay || 'CASH'}</span>
+                  <span style="font-size:12px; font-weight:700; color:var(--primary); margin-left:4px;">£${client.value}</span>
+                  <button class="btn-icon" onclick="event.stopPropagation(); moveClient('${day}', ${idx}, -1)">▲</button>
+                  <button class="btn-icon" onclick="event.stopPropagation(); moveClient('${day}', ${idx}, 1)">▼</button>
+                  <button class="btn-icon" onclick="event.stopPropagation(); deleteClient('${day}', ${idx})" style="color:#ef4444;">✕</button>
                 </div>
               </div>
 
-              <div class="time-row">
-                <span>🕒 Entrada:</span>
-                <input type="text" class="time-input" value="${client.horario || ''}" placeholder="08:00" onchange="updateClientTime('${day}', ${idx}, 'horario', this.value)">
-                <span>Saída:</span>
-                <input type="text" class="time-input" value="${client.horarioFim || ''}" placeholder="10:30" onchange="updateClientTime('${day}', ${idx}, 'horarioFim', this.value)">
-              </div>
-
-              <div class="card-body">
-                <div>
-                  ⏱ <input type="number" class="card-input-inline" value="${client.hours}" onchange="updateClientField('${day}', ${idx}, 'hours', this.value)"> h | 
-                  £ <input type="number" class="card-input-inline" value="${client.value}" onchange="updateClientField('${day}', ${idx}, 'value', this.value)">
+              <!-- CORPO DO CARTÃO (DETALHES OCULTOS) -->
+              <div class="card-details">
+                <div class="time-row">
+                  <span>🕒 Entrada:</span>
+                  <input type="text" class="time-input" value="${client.horario || ''}" placeholder="08:00" onchange="updateClientTime('${day}', ${idx}, 'horario', this.value)">
+                  <span>Saída:</span>
+                  <input type="text" class="time-input" value="${client.horarioFim || ''}" placeholder="10:30" onchange="updateClientTime('${day}', ${idx}, 'horarioFim', this.value)">
                 </div>
-                <div>
-                  <span class="badge badge-${client.pay || 'cash'}" onclick="togglePayType('${day}', ${idx})">${client.pay || 'CASH'}</span>
-                  <span class="badge ${isFixedMensal || client.mensal ? 'badge-mensal' : ''}" style="${!isFixedMensal && !client.mensal ? 'background:#334155; color:#94a3b8;' : ''}" onclick="toggleMensal('${day}', ${idx})">MENSAL</span>
+
+                <div class="card-body">
+                  <div>
+                    ⏱ <input type="number" class="card-input-inline" value="${client.hours}" onchange="updateClientField('${day}', ${idx}, 'hours', this.value)"> h | 
+                    £ <input type="number" class="card-input-inline" value="${client.value}" onchange="updateClientField('${day}', ${idx}, 'value', this.value)">
+                  </div>
+                  <div>
+                    <span class="badge badge-${client.pay || 'cash'}" onclick="togglePayType('${day}', ${idx})">${client.pay || 'CASH'}</span>
+                    <span class="badge ${isFixedMensal || client.mensal ? 'badge-mensal' : ''}" style="${!isFixedMensal && !client.mensal ? 'background:#334155; color:#94a3b8;' : ''}" onclick="toggleMensal('${day}', ${idx})">MENSAL</span>
+                  </div>
                 </div>
-              </div>
 
-              ${timePerPersonText ? `<div class="time-per-person">${timePerPersonText}</div>` : ''}
+                ${timePerPersonText ? `<div class="time-per-person">${timePerPersonText}</div>` : ''}
 
-              <div class="workers-section">
-                <span style="color:var(--text-muted);">Trabalhou nesta casa:</span>
-                <div class="workers-list">
-                  ${appData.teamMembers.map(m => {
-                    const isAssigned = (client.workers || []).includes(m.name);
-                    const isOwnerClass = m.isOwner ? 'owner' : '';
-                    return `<span class="worker-chip ${isAssigned ? 'selected ' + isOwnerClass : ''}" onclick="toggleWorker('${day}',${idx}, '${m.name}')">${m.name}</span>`;
-                  }).join('')}
+                <div class="workers-section">
+                  <span style="color:var(--text-muted);">Trabalhou nesta casa:</span>
+                  <div class="workers-list">
+                    ${appData.teamMembers.map(m => {
+                      const isAssigned = (client.workers || []).includes(m.name);
+                      const isOwnerClass = m.isOwner ? 'owner' : '';
+                      return `<span class="worker-chip ${isAssigned ? 'selected ' + isOwnerClass : ''}" onclick="toggleWorker('${day}',${idx}, '${m.name}')">${m.name}</span>`;
+                    }).join('')}
+                  </div>
                 </div>
               </div>
             </div>
@@ -710,7 +735,6 @@
       const summaryBody = document.getElementById('team-summary-body');
       payBody.innerHTML = ''; summaryBody.innerHTML = '';
 
-      // CÁLCULO DINÂMICO DE CORTE (SEXTA DA SEMANA ANTERIOR A QUINTA DA SEMANA ATUAL)
       let prevWeekKey = (appData.selectedWeekKey === 'semana2') ? 'semana1' : 'semana2';
       let prevOffset = (appData.selectedWeekKey === 'semana1') ? currentWeekOffset - 1 : currentWeekOffset;
 
@@ -768,7 +792,6 @@
         });
       }
 
-      // Soma dinâmica: Sexta da semana anterior + Segunda a Quinta da semana atual
       addHoursForDay(prevWeekKey, 'sexta');
       ['segunda', 'terca', 'quarta', 'quinta'].forEach(d => addHoursForDay(appData.selectedWeekKey, d));
 
@@ -785,7 +808,6 @@
         `;
       });
 
-      // PRODUÇÃO DA SEMANA CORRENTE (SEGUNDA A SEXTA)
       let currentWeekDays = appData.weeks[appData.selectedWeekKey] || {};
       let memberHoursMap = {};
       let memberPayMap = {};
@@ -904,7 +926,6 @@
         </div>
       `;
 
-      // Fluxo Semanal
       const currentWeekDays = appData.weeks[appData.selectedWeekKey] || {};
       const dayKeys = (appData.selectedWeekKey === 'outros') ? ["outros"] : ["segunda", "terca", "quarta", "quinta", "sexta"];
 
@@ -950,7 +971,6 @@
         <p style="font-size:18px; color:var(--primary); margin-top:8px;">💰 <strong>Entradas da Semana: £${totalGeralSemana.toFixed(2)}</strong></p>
       `;
 
-      // Contabilidade Acumulada Mês a Mês
       let monthlyData = {};
 
       Object.keys(appData.weeks).forEach(wKey => {
@@ -1009,7 +1029,6 @@
       });
     }
 
-    /* LÓGICA DA ABA DE VISITAS RESTAURADA */
     function setPet(val) {
       visitForm.pet = val;
       document.getElementById('btn-pet-sim').className = val ? 'toggle-btn active' : 'toggle-btn';
