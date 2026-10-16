@@ -155,6 +155,16 @@
 
   <!-- ABA EQUIPE -->
   <div id="tab-equipe" style="display:none;">
+    <!-- GERENCIADOR DE FUNCIONÁRIOS (EDITÁVEL) -->
+    <div class="section-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="color: var(--primary); font-size: 16px;">👥 Gerenciar Funcionários</h3>
+        <button class="btn" onclick="addTeamMember()" style="font-size: 12px;">+ Adicionar Membro</button>
+      </div>
+      <div id="team-members-editor"></div>
+    </div>
+
+    <!-- FECHAMENTO DA FOLHA (PAGAMENTO DE SEXTA) -->
     <div class="pay-cycle-box">
       <h3 style="color: var(--primary); margin-bottom: 6px; font-size: 16px;">💳 Fechamento da Folha (Pagamento de Sexta)</h3>
       <p id="pay-cycle-dates-label" style="font-size: 12px; color: #e2e8f0; margin-bottom: 12px;">Corte: Sexta anterior até Quinta-feira atual</p>
@@ -172,6 +182,7 @@
       </table>
     </div>
 
+    <!-- PRODUÇÃO DA SEMANA CORRENTE -->
     <div class="section-box">
       <h3 style="color: var(--text-main); margin-bottom: 12px; font-size: 15px;">📊 Produção da Semana Selecionada (Segunda a Sexta)</h3>
       <table class="team-table">
@@ -514,6 +525,7 @@
     function renderAll() {
       updateCycleLabel();
       renderAgenda();
+      renderTeamMembersEditor();
       renderTeamSummary();
       renderFinancialSummary();
       renderSavedVisits();
@@ -561,7 +573,6 @@
       dayKeys.forEach(day => {
         const clients = currentWeekObj[day] || [];
         let totalHours = clients.reduce((acc, c) => acc + (parseFloat(c.hours) || 0), 0);
-        let totalValue = clients.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
 
         let calcDate = getCalculatedDate(appData.selectedWeekKey, day, currentWeekOffset);
         let titleDisplay = (day === "outros") ? "Clientes Mensais / Outros" : day.charAt(0).toUpperCase() + day.slice(1) + `-feira (${calcDate.formatted.slice(0,5)})`;
@@ -583,7 +594,8 @@
           <div class="day-column">
             <div class="day-header">
               <span class="day-title">${titleDisplay}</span>
-              <span class="day-stats">${totalHours}h | £${totalValue.toFixed(2)}</span>
+              <!-- APENAS AS HORAS FICAM VISÍVEIS NO TOPO DO DIA -->
+              <span class="day-stats">${totalHours.toFixed(1)}h Totais</span>
             </div>
             ${workerSummaryText ? `<div class="day-workers-summary">👥 <strong>Horas do dia:</strong> ${workerSummaryText}</div>` : ''}
         `;
@@ -606,7 +618,6 @@
 
           dayHtml += `
             <div class="card" id="${cardDomId}">
-              <!-- CABEÇALHO RESUMIDO DO CARTÃO (CLIQUE PARA EXPANDIR) -->
               <div class="card-header" onclick="toggleCardExpand('${cardDomId}')">
                 <div class="client-title-row">
                   <span class="toggle-arrow">▼</span>
@@ -616,14 +627,12 @@
                 </div>
                 <div class="actions">
                   <span class="badge badge-${client.pay || 'cash'}">${client.pay || 'CASH'}</span>
-                  <span style="font-size:12px; font-weight:700; color:var(--primary); margin-left:4px;">£${client.value}</span>
                   <button class="btn-icon" onclick="event.stopPropagation(); moveClient('${day}', ${idx}, -1)">▲</button>
                   <button class="btn-icon" onclick="event.stopPropagation(); moveClient('${day}', ${idx}, 1)">▼</button>
                   <button class="btn-icon" onclick="event.stopPropagation(); deleteClient('${day}', ${idx})" style="color:#ef4444;">✕</button>
                 </div>
               </div>
 
-              <!-- CORPO DO CARTÃO (DETALHES OCULTOS) -->
               <div class="card-details">
                 <div class="time-row">
                   <span>🕒 Entrada:</span>
@@ -730,6 +739,65 @@
       }
     }
 
+    /* GERENCIAMENTO EDITÁVEL DA EQUIPE */
+    function renderTeamMembersEditor() {
+      const container = document.getElementById('team-members-editor');
+      container.innerHTML = '';
+
+      appData.teamMembers.forEach((m, idx) => {
+        container.innerHTML += `
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; background:#0f172a; padding:8px; border-radius:8px; border:1px solid var(--border-color);">
+            <input type="text" class="form-input" style="flex:2; padding:6px 8px; font-size:13px;" value="${m.name}" onchange="updateTeamMember(${idx}, 'name', this.value)">
+            <span style="font-size:12px; color:var(--text-muted);">£/h:</span>
+            <input type="number" class="form-input" style="width:70px; padding:6px 8px; font-size:13px;" value="${m.rate}" ${m.isOwner ? 'disabled placeholder="Sócio"' : ''} onchange="updateTeamMember(${idx}, 'rate', this.value)">
+            <button onclick="deleteTeamMember(${idx})" style="background:none; border:none; color:#ef4444; font-weight:bold; cursor:pointer; font-size:14px; padding:0 6px;">✕</button>
+          </div>
+        `;
+      });
+    }
+
+    function updateTeamMember(idx, field, val) {
+      let oldName = appData.teamMembers[idx].name;
+      if (field === 'name') {
+        let newName = val.trim();
+        if (!newName) return;
+        // Atualiza o nome em todas as semanas já gravadas
+        Object.keys(appData.weeks).forEach(w => {
+          Object.keys(appData.weeks[w]).forEach(d => {
+            (appData.weeks[w][d] || []).forEach(c => {
+              if (c.workers) {
+                let wIdx = c.workers.indexOf(oldName);
+                if (wIdx > -1) c.workers[wIdx] = newName;
+              }
+            });
+          });
+        });
+        appData.teamMembers[idx].name = newName;
+      } else if (field === 'rate') {
+        appData.teamMembers[idx].rate = parseFloat(val) || 0;
+      }
+      saveData(); renderAll();
+    }
+
+    function addTeamMember() {
+      const name = prompt("Nome do novo funcionário:");
+      if (!name) return;
+      const rate = prompt("Taxa por hora (£/h):", "12.21");
+      appData.teamMembers.push({
+        name: name.trim(),
+        rate: parseFloat(rate) || 0,
+        isOwner: false
+      });
+      saveData(); renderAll();
+    }
+
+    function deleteTeamMember(idx) {
+      if (confirm(`Remover ${appData.teamMembers[idx].name} da equipe?`)) {
+        appData.teamMembers.splice(idx, 1);
+        saveData(); renderAll();
+      }
+    }
+
     function renderTeamSummary() {
       const payBody = document.getElementById('team-pay-cycle-body');
       const summaryBody = document.getElementById('team-summary-body');
@@ -762,7 +830,7 @@
           assigned.forEach(wName => {
             let mObj = appData.teamMembers.find(t => t.name === wName);
             if (mObj && mObj.isOwner) ownersAssigned.push(wName);
-            else normalWorkers.push(wName);
+            else if (mObj) normalWorkers.push(wName);
           });
 
           let hoursPerPerson = totalHours / assigned.length;
@@ -770,7 +838,7 @@
 
           normalWorkers.forEach(wName => {
             let mObj = appData.teamMembers.find(t => t.name === wName);
-            let payForThisHouse = hoursPerPerson * mObj.rate;
+            let payForThisHouse = hoursPerPerson * (mObj ? mObj.rate : 0);
             payCycleHours[wName] = (payCycleHours[wName] || 0) + hoursPerPerson;
             payCycleValues[wName] = (payCycleValues[wName] || 0) + payForThisHouse;
             totalPaidToNormalWorkers += payForThisHouse;
@@ -786,8 +854,8 @@
             });
           } else {
             let surplusPerOwner = surplus / 2;
-            payCycleValues["Suzana"] = (payCycleValues["Suzana"] || 0) + surplusPerOwner;
-            payCycleValues["Márcio"] = (payCycleValues["Márcio"] || 0) + surplusPerOwner;
+            if (payCycleValues["Suzana"] !== undefined) payCycleValues["Suzana"] += surplusPerOwner;
+            if (payCycleValues["Márcio"] !== undefined) payCycleValues["Márcio"] += surplusPerOwner;
           }
         });
       }
@@ -827,7 +895,7 @@
           assigned.forEach(wName => {
             let mObj = appData.teamMembers.find(t => t.name === wName);
             if (mObj && mObj.isOwner) ownersAssigned.push(wName);
-            else normalWorkers.push(wName);
+            else if (mObj) normalWorkers.push(wName);
           });
 
           let hoursPerPerson = totalHours / assigned.length;
@@ -835,7 +903,7 @@
 
           normalWorkers.forEach(wName => {
             let mObj = appData.teamMembers.find(t => t.name === wName);
-            let payForThisHouse = hoursPerPerson * mObj.rate;
+            let payForThisHouse = hoursPerPerson * (mObj ? mObj.rate : 0);
             memberHoursMap[wName] += hoursPerPerson;
             memberPayMap[wName] += payForThisHouse;
             totalPaidToNormalWorkers += payForThisHouse;
@@ -851,8 +919,8 @@
             });
           } else {
             let surplusPerOwner = surplus / 2;
-            memberPayMap["Suzana"] += surplusPerOwner;
-            memberPayMap["Márcio"] += surplusPerOwner;
+            if (memberPayMap["Suzana"] !== undefined) memberPayMap["Suzana"] += surplusPerOwner;
+            if (memberPayMap["Márcio"] !== undefined) memberPayMap["Márcio"] += surplusPerOwner;
           }
         });
       });
