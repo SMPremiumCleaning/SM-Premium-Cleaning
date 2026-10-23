@@ -155,7 +155,6 @@
 
   <!-- ABA EQUIPE -->
   <div id="tab-equipe" style="display:none;">
-    <!-- GERENCIADOR DE FUNCIONÁRIOS (EDITÁVEL) -->
     <div class="section-box">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
         <h3 style="color: var(--primary); font-size: 16px;">👥 Gerenciar Funcionários</h3>
@@ -164,7 +163,6 @@
       <div id="team-members-editor"></div>
     </div>
 
-    <!-- FECHAMENTO DA FOLHA (PAGAMENTO DE SEXTA) -->
     <div class="pay-cycle-box">
       <h3 style="color: var(--primary); margin-bottom: 6px; font-size: 16px;">💳 Fechamento da Folha (Pagamento de Sexta)</h3>
       <p id="pay-cycle-dates-label" style="font-size: 12px; color: #e2e8f0; margin-bottom: 12px;">Corte: Sexta anterior até Quinta-feira atual</p>
@@ -182,7 +180,6 @@
       </table>
     </div>
 
-    <!-- PRODUÇÃO DA SEMANA CORRENTE -->
     <div class="section-box">
       <h3 style="color: var(--text-main); margin-bottom: 12px; font-size: 15px;">📊 Produção da Semana Selecionada (Segunda a Sexta)</h3>
       <table class="team-table">
@@ -203,9 +200,11 @@
   <div id="tab-visitas" style="display:none;">
     <div class="section-box" style="position: relative;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <h3 style="color: var(--primary); font-size: 18px;">Nova Visita</h3>
-        <button onclick="clearVisitForm()" style="background:none; border:none; color:#ef4444; font-size:12px; cursor:pointer; font-weight:600;">remover / limpar</button>
+        <h3 id="form-visit-title" style="color: var(--primary); font-size: 18px;">Nova Visita</h3>
+        <button onclick="clearVisitForm()" style="background:none; border:none; color:#ef4444; font-size:12px; cursor:pointer; font-weight:600;">limpar / cancelar</button>
       </div>
+
+      <input type="hidden" id="editing-visit-id" value="">
 
       <div class="form-row">
         <div class="form-col">
@@ -219,8 +218,29 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label">PRIORIDADES</label>
-        <textarea id="v-prioridades" class="form-textarea" rows="2" placeholder="O que o cliente pediu pra priorizar..."></textarea>
+        <label class="form-label">FREQUÊNCIA</label>
+        <div class="toggle-group" id="frequencia-toggle">
+          <button class="toggle-btn active" onclick="setFrequencia('Semanal', this)">Semanal</button>
+          <button class="toggle-btn" onclick="setFrequencia('Quinzenal', this)">Quinzenal</button>
+          <button class="toggle-btn" onclick="setFrequencia('Mensal', this)">Mensal</button>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-col">
+          <label class="form-label">TEM ESCRITÓRIO?</label>
+          <div class="toggle-group">
+            <button id="btn-escritorio-sim" class="toggle-btn" onclick="setEscritorio(true)">Sim</button>
+            <button id="btn-escritorio-nao" class="toggle-btn active" onclick="setEscritorio(false)">Não</button>
+          </div>
+        </div>
+        <div class="form-col">
+          <label class="form-label">TRABALHA DE CASA?</label>
+          <div class="toggle-group">
+            <button id="btn-home-sim" class="toggle-btn" onclick="setHome(true)">Sim</button>
+            <button id="btn-home-nao" class="toggle-btn active" onclick="setHome(false)">Não</button>
+          </div>
+        </div>
       </div>
 
       <div class="form-row">
@@ -303,7 +323,17 @@
         </div>
       </div>
 
-      <button class="btn btn-primary" onclick="saveVisit()" style="margin-top: 15px;">Salvar Visita</button>
+      <div class="form-group">
+        <label class="form-label">PRIORIDADES</label>
+        <textarea id="v-prioridades" class="form-textarea" rows="2" placeholder="O que o cliente pediu pra priorizar..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">OBSERVAÇÕES</label>
+        <textarea id="v-observacoes" class="form-textarea" rows="2" placeholder="Anotações gerais, acesso, chaves, etc..."></textarea>
+      </div>
+
+      <button id="btn-save-visit" class="btn btn-primary" onclick="saveVisit()" style="margin-top: 15px;">Salvar Visita</button>
     </div>
 
     <div class="section-box">
@@ -365,7 +395,18 @@
     const baseSemana1Start = new Date(2026, 8, 28); // 28/09/2026
 
     const fixedMensalClients = ["Bernadette", "Bushra"];
-    let visitForm = { pet: false, criancas: false, quartos: 0, lavabo: 0, salas: 0, bathrooms: [{ type: 'Shower' }], piso: 'Piso' };
+    let visitForm = { 
+      frequencia: 'Semanal', 
+      escritorio: false, 
+      home: false, 
+      pet: false, 
+      criancas: false, 
+      quartos: 0, 
+      lavabo: 0, 
+      salas: 0, 
+      bathrooms: [{ type: 'Shower' }], 
+      piso: 'Piso' 
+    };
 
     const clientAddresses = {
       "Bernadette": "York Place, BA15PU",
@@ -594,7 +635,6 @@
           <div class="day-column">
             <div class="day-header">
               <span class="day-title">${titleDisplay}</span>
-              <!-- APENAS AS HORAS FICAM VISÍVEIS NO TOPO DO DIA -->
               <span class="day-stats">${totalHours.toFixed(1)}h Totais</span>
             </div>
             ${workerSummaryText ? `<div class="day-workers-summary">👥 <strong>Horas do dia:</strong> ${workerSummaryText}</div>` : ''}
@@ -739,7 +779,6 @@
       }
     }
 
-    /* GERENCIAMENTO EDITÁVEL DA EQUIPE */
     function renderTeamMembersEditor() {
       const container = document.getElementById('team-members-editor');
       container.innerHTML = '';
@@ -761,7 +800,6 @@
       if (field === 'name') {
         let newName = val.trim();
         if (!newName) return;
-        // Atualiza o nome em todas as semanas já gravadas
         Object.keys(appData.weeks).forEach(w => {
           Object.keys(appData.weeks[w]).forEach(d => {
             (appData.weeks[w][d] || []).forEach(c => {
@@ -1097,6 +1135,25 @@
       });
     }
 
+    /* CONTROLE DOS CAMPOS DE VISITAS */
+    function setFrequencia(val, btn) {
+      visitForm.frequencia = val;
+      document.querySelectorAll('#frequencia-toggle button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function setEscritorio(val) {
+      visitForm.escritorio = val;
+      document.getElementById('btn-escritorio-sim').className = val ? 'toggle-btn active' : 'toggle-btn';
+      document.getElementById('btn-escritorio-nao').className = !val ? 'toggle-btn active' : 'toggle-btn';
+    }
+
+    function setHome(val) {
+      visitForm.home = val;
+      document.getElementById('btn-home-sim').className = val ? 'toggle-btn active' : 'toggle-btn';
+      document.getElementById('btn-home-nao').className = !val ? 'toggle-btn active' : 'toggle-btn';
+    }
+
     function setPet(val) {
       visitForm.pet = val;
       document.getElementById('btn-pet-sim').className = val ? 'toggle-btn active' : 'toggle-btn';
@@ -1162,17 +1219,47 @@
     }
 
     function clearVisitForm() {
+      document.getElementById('editing-visit-id').value = '';
+      document.getElementById('form-visit-title').innerText = 'Nova Visita';
+      document.getElementById('btn-save-visit').innerText = 'Salvar Visita';
+
       document.getElementById('v-nome').value = '';
       document.getElementById('v-endereco').value = '';
       document.getElementById('v-prioridades').value = '';
+      document.getElementById('v-observacoes').value = '';
       document.getElementById('v-tempo-1').value = '';
       document.getElementById('v-tempo-comb').value = '';
       document.getElementById('v-rate').value = '';
-      visitForm = { pet: false, criancas: false, quartos: 0, lavabo: 0, salas: 0, bathrooms: [{ type: 'Shower' }], piso: 'Piso' };
-      setPet(false); setCriancas(false);
+
+      visitForm = { 
+        frequencia: 'Semanal', 
+        escritorio: false, 
+        home: false, 
+        pet: false, 
+        criancas: false, 
+        quartos: 0, 
+        lavabo: 0, 
+        salas: 0, 
+        bathrooms: [{ type: 'Shower' }], 
+        piso: 'Piso' 
+      };
+
+      // Atualiza botões visuais
+      const freqBtns = document.querySelectorAll('#frequencia-toggle button');
+      freqBtns.forEach((b, i) => { if(i===0) b.classList.add('active'); else b.classList.remove('active'); });
+
+      setEscritorio(false);
+      setHome(false);
+      setPet(false);
+      setCriancas(false);
+
       document.getElementById('cnt-quartos').innerText = 0;
       document.getElementById('cnt-lavabo').innerText = 0;
       document.getElementById('cnt-salas').innerText = 0;
+      
+      const pisoBtns = document.querySelectorAll('#piso-toggle button');
+      pisoBtns.forEach((b, i) => { if(i===0) b.classList.add('active'); else b.classList.remove('active'); });
+
       renderBathrooms();
       calculateVisitTotal();
     }
@@ -1181,11 +1268,17 @@
       const nome = document.getElementById('v-nome').value;
       if (!nome) { alert("Por favor, digite o nome do cliente."); return; }
 
-      const newVisit = {
-        id: Math.random().toString(36).substr(2, 7),
+      const editingId = document.getElementById('editing-visit-id').value;
+
+      const visitData = {
+        id: editingId ? editingId : Math.random().toString(36).substr(2, 7),
         nome: nome,
         endereco: document.getElementById('v-endereco').value,
+        frequencia: visitForm.frequencia,
+        escritorio: visitForm.escritorio,
+        home: visitForm.home,
         prioridades: document.getElementById('v-prioridades').value,
+        observacoes: document.getElementById('v-observacoes').value,
         pet: visitForm.pet,
         criancas: visitForm.criancas,
         quartos: visitForm.quartos,
@@ -1200,11 +1293,72 @@
       };
 
       if (!appData.visits) appData.visits = [];
-      appData.visits.push(newVisit);
+
+      if (editingId) {
+        let index = appData.visits.findIndex(v => v.id === editingId);
+        if (index > -1) {
+          appData.visits[index] = visitData;
+        } else {
+          appData.visits.push(visitData);
+        }
+      } else {
+        appData.visits.push(visitData);
+      }
+
       saveData();
       clearVisitForm();
       renderAll();
       alert("Visita salva com sucesso!");
+    }
+
+    function editVisit(idx) {
+      const v = appData.visits[idx];
+      if (!v) return;
+
+      document.getElementById('editing-visit-id').value = v.id || '';
+      document.getElementById('form-visit-title').innerText = `Editando Visita: ${v.nome}`;
+      document.getElementById('btn-save-visit').innerText = 'Atualizar Visita';
+
+      document.getElementById('v-nome').value = v.nome || '';
+      document.getElementById('v-endereco').value = v.endereco || '';
+      document.getElementById('v-prioridades').value = v.prioridades || '';
+      document.getElementById('v-observacoes').value = v.observacoes || '';
+      document.getElementById('v-tempo-1').value = v.tempo1 || '';
+      document.getElementById('v-tempo-comb').value = v.tempoComb || '';
+      document.getElementById('v-rate').value = v.rate || '';
+
+      // Frequência
+      visitForm.frequencia = v.frequencia || 'Semanal';
+      document.querySelectorAll('#frequencia-toggle button').forEach(b => {
+        if (b.innerText.toLowerCase() === visitForm.frequencia.toLowerCase()) b.classList.add('active');
+        else b.classList.remove('active');
+      });
+
+      setEscritorio(v.escritorio || false);
+      setHome(v.home || false);
+      setPet(v.pet || false);
+      setCriancas(v.criancas || false);
+
+      visitForm.quartos = v.quartos || 0;
+      visitForm.lavabo = v.lavabo || 0;
+      visitForm.salas = v.salas || 0;
+      document.getElementById('cnt-quartos').innerText = visitForm.quartos;
+      document.getElementById('cnt-lavabo').innerText = visitForm.lavabo;
+      document.getElementById('cnt-salas').innerText = visitForm.salas;
+
+      visitForm.bathrooms = v.bathrooms || [{ type: 'Shower' }];
+      renderBathrooms();
+
+      visitForm.piso = v.piso || 'Piso';
+      document.querySelectorAll('#piso-toggle button').forEach(b => {
+        if (b.innerText.toLowerCase() === visitForm.piso.toLowerCase()) b.classList.add('active');
+        else b.classList.remove('active');
+      });
+
+      calculateVisitTotal();
+
+      // Rolar a página para o topo da aba de visitas
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function renderSavedVisits() {
@@ -1220,14 +1374,19 @@
           <div class="card" style="margin-bottom:12px;">
             <div class="card-header">
               <span class="client-name">${v.nome}</span>
-              <button onclick="deleteVisit(${idx})" style="background:none; border:none; color:#ef4444; font-size:12px; cursor:pointer; font-weight:600;">Remover</button>
+              <div class="actions">
+                <button class="btn" onclick="editVisit(${idx})" style="font-size:11px; padding:4px 8px;">Editar</button>
+                <button onclick="deleteVisit(${idx})" style="background:none; border:none; color:#ef4444; font-size:12px; cursor:pointer; font-weight:600; margin-left:6px;">Remover</button>
+              </div>
             </div>
-            <div style="font-size:13px; color:var(--text-muted); line-height:1.6;">
+            <div style="font-size:13px; color:var(--text-muted); line-height:1.6; margin-top:8px;">
               <p>📍 <strong>Endereço:</strong> ${v.endereco || 'N/A'}</p>
-              <p>📌 <strong>Prioridades:</strong> ${v.prioridades || 'N/A'}</p>
+              <p>🔄 <strong>Frequência:</strong> ${v.frequencia || 'Semanal'} | 🖥️ Escritório: ${v.escritorio ? 'Sim' : 'Não'} | 🏠 Trab. Casa: ${v.home ? 'Sim' : 'Não'}</p>
               <p>🐾 Pet: ${v.pet ? 'Sim' : 'Não'} | 👶 Crianças: ${v.criancas ? 'Sim' : 'Não'}</p>
               <p>🛏 Quartos: ${v.quartos} | 🚪 Lavabo: ${v.lavabo} | 🛋️ Salas: ${v.salas} | 🚿 Banheiros: ${v.bathrooms ? v.bathrooms.length : 0}</p>
               <p>🪵 Piso: ${v.piso} | ⏱️ Combinado: ${v.tempoComb}h | 💰 Total: £${(v.total || 0).toFixed(2)}</p>
+              ${v.prioridades ? `<p>📌 <strong>Prioridades:</strong> ${v.prioridades}</p>` : ''}
+              ${v.observacoes ? `<p>📝 <strong>Observações:</strong> ${v.observacoes}</p>` : ''}
             </div>
           </div>
         `;
