@@ -218,6 +218,17 @@
       </div>
 
       <div class="form-group">
+        <label class="form-label">DIA DA SEMANA</label>
+        <div class="toggle-group" id="dia-semana-toggle">
+          <button class="toggle-btn active" onclick="setDiaSemana('segunda', this)">Segunda</button>
+          <button class="toggle-btn" onclick="setDiaSemana('terca', this)">Terça</button>
+          <button class="toggle-btn" onclick="setDiaSemana('quarta', this)">Quarta</button>
+          <button class="toggle-btn" onclick="setDiaSemana('quinta', this)">Quinta</button>
+          <button class="toggle-btn" onclick="setDiaSemana('sexta', this)">Sexta</button>
+        </div>
+      </div>
+
+      <div class="form-group">
         <label class="form-label">FREQUÊNCIA</label>
         <div class="toggle-group" id="frequencia-toggle">
           <button class="toggle-btn active" onclick="setFrequencia('Semanal', this)">Semanal</button>
@@ -396,6 +407,7 @@
 
     const fixedMensalClients = ["Bernadette", "Bushra"];
     let visitForm = { 
+      diaSemana: 'segunda',
       frequencia: 'Semanal', 
       escritorio: false, 
       home: false, 
@@ -655,12 +667,13 @@
 
           let isFixedMensal = fixedMensalClients.includes(client.name);
           let cardDomId = `card_${day}_${idx}`;
+          let isExpanded = client.expanded === true;
 
           dayHtml += `
-            <div class="card" id="${cardDomId}">
-              <div class="card-header" onclick="toggleCardExpand('${cardDomId}')">
+            <div class="card ${isExpanded ? 'expanded' : ''}" id="${cardDomId}">
+              <div class="card-header" onclick="toggleCardExpand('${day}', ${idx})">
                 <div class="client-title-row">
-                  <span class="toggle-arrow">▼</span>
+                  <span class="toggle-arrow">${isExpanded ? '▲' : '▼'}</span>
                   <a class="client-name" onclick="openMaps('${client.name}', event)" title="Clique para abrir no Maps">
                     📍 ${client.name}
                   </a>
@@ -673,15 +686,15 @@
                 </div>
               </div>
 
-              <div class="card-details">
-                <div class="time-row">
+              <div class="card-details" style="${isExpanded ? 'display:block;' : 'display:none;'}">
+                <div class="time-row" onclick="event.stopPropagation()">
                   <span>🕒 Entrada:</span>
                   <input type="text" class="time-input" value="${client.horario || ''}" placeholder="08:00" onchange="updateClientTime('${day}', ${idx}, 'horario', this.value)">
                   <span>Saída:</span>
                   <input type="text" class="time-input" value="${client.horarioFim || ''}" placeholder="10:30" onchange="updateClientTime('${day}', ${idx}, 'horarioFim', this.value)">
                 </div>
 
-                <div class="card-body">
+                <div class="card-body" onclick="event.stopPropagation()">
                   <div>
                     ⏱ <input type="number" class="card-input-inline" value="${client.hours}" onchange="updateClientField('${day}', ${idx}, 'hours', this.value)"> h | 
                     £ <input type="number" class="card-input-inline" value="${client.value}" onchange="updateClientField('${day}', ${idx}, 'value', this.value)">
@@ -694,7 +707,7 @@
 
                 ${timePerPersonText ? `<div class="time-per-person">${timePerPersonText}</div>` : ''}
 
-                <div class="workers-section">
+                <div class="workers-section" onclick="event.stopPropagation()">
                   <span style="color:var(--text-muted);">Trabalhou nesta casa:</span>
                   <div class="workers-list">
                     ${appData.teamMembers.map(m => {
@@ -712,6 +725,13 @@
         dayHtml += `</div>`;
         container.innerHTML += dayHtml;
       });
+    }
+
+    function toggleCardExpand(day, idx) {
+      const client = appData.weeks[appData.selectedWeekKey][day][idx];
+      client.expanded = !client.expanded;
+      saveData();
+      renderAgenda();
     }
 
     function updateClientTime(day, idx, field, val) {
@@ -773,7 +793,7 @@
       if (appData.weeks[appData.selectedWeekKey][day]) {
         appData.weeks[appData.selectedWeekKey][day].push({
           id: Math.random().toString(36).substr(2, 7),
-          name: name, horario: "08:00", horarioFim: "", hours: parseFloat(hours) || 0, value: parseFloat(value) || 0, pay: "cash", workers: []
+          name: name, horario: "08:00", horarioFim: "", hours: parseFloat(hours) || 0, value: parseFloat(value) || 0, pay: "cash", workers: [], expanded: true
         });
         saveData(); renderAll();
       }
@@ -1136,6 +1156,12 @@
     }
 
     /* CONTROLE DOS CAMPOS DE VISITAS */
+    function setDiaSemana(val, btn) {
+      visitForm.diaSemana = val;
+      document.querySelectorAll('#dia-semana-toggle button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
     function setFrequencia(val, btn) {
       visitForm.frequencia = val;
       document.querySelectorAll('#frequencia-toggle button').forEach(b => b.classList.remove('active'));
@@ -1232,6 +1258,7 @@
       document.getElementById('v-rate').value = '';
 
       visitForm = { 
+        diaSemana: 'segunda',
         frequencia: 'Semanal', 
         escritorio: false, 
         home: false, 
@@ -1244,7 +1271,9 @@
         piso: 'Piso' 
       };
 
-      // Atualiza botões visuais
+      const diaBtns = document.querySelectorAll('#dia-semana-toggle button');
+      diaBtns.forEach((b, i) => { if(i===0) b.classList.add('active'); else b.classList.remove('active'); });
+
       const freqBtns = document.querySelectorAll('#frequencia-toggle button');
       freqBtns.forEach((b, i) => { if(i===0) b.classList.add('active'); else b.classList.remove('active'); });
 
@@ -1269,11 +1298,15 @@
       if (!nome) { alert("Por favor, digite o nome do cliente."); return; }
 
       const editingId = document.getElementById('editing-visit-id').value;
+      const tempoComb = parseFloat(document.getElementById('v-tempo-comb').value) || 0;
+      const rate = parseFloat(document.getElementById('v-rate').value) || 0;
+      const totalVal = tempoComb * rate;
 
       const visitData = {
         id: editingId ? editingId : Math.random().toString(36).substr(2, 7),
         nome: nome,
         endereco: document.getElementById('v-endereco').value,
+        diaSemana: visitForm.diaSemana,
         frequencia: visitForm.frequencia,
         escritorio: visitForm.escritorio,
         home: visitForm.home,
@@ -1287,9 +1320,9 @@
         bathrooms: visitForm.bathrooms,
         piso: visitForm.piso,
         tempo1: document.getElementById('v-tempo-1').value,
-        tempoComb: document.getElementById('v-tempo-comb').value,
-        rate: document.getElementById('v-rate').value,
-        total: (parseFloat(document.getElementById('v-tempo-comb').value) || 0) * (parseFloat(document.getElementById('v-rate').value) || 0)
+        tempoComb: tempoComb,
+        rate: rate,
+        total: totalVal
       };
 
       if (!appData.visits) appData.visits = [];
@@ -1305,10 +1338,30 @@
         appData.visits.push(visitData);
       }
 
+      // Adiciona automaticamente na Agenda da semana selecionada se for um novo agendamento ou se alterado
+      let targetWeek = appData.weeks[appData.selectedWeekKey];
+      if (targetWeek && targetWeek[visitForm.diaSemana]) {
+        // Verifica se já existe na agenda para não duplicar, senão adiciona
+        let existingClient = targetWeek[visitForm.diaSemana].find(c => c.name === nome);
+        if (!existingClient) {
+          targetWeek[visitForm.diaSemana].push({
+            id: Math.random().toString(36).substr(2, 7),
+            name: nome,
+            horario: "08:00",
+            horarioFim: "",
+            hours: tempoComb,
+            value: totalVal,
+            pay: "cash",
+            workers: [],
+            expanded: true
+          });
+        }
+      }
+
       saveData();
       clearVisitForm();
       renderAll();
-      alert("Visita salva com sucesso!");
+      alert("Visita salva e agendada com sucesso!");
     }
 
     function editVisit(idx) {
@@ -1326,6 +1379,13 @@
       document.getElementById('v-tempo-1').value = v.tempo1 || '';
       document.getElementById('v-tempo-comb').value = v.tempoComb || '';
       document.getElementById('v-rate').value = v.rate || '';
+
+      // Dia da Semana
+      visitForm.diaSemana = v.diaSemana || 'segunda';
+      document.querySelectorAll('#dia-semana-toggle button').forEach(b => {
+        if (b.innerText.toLowerCase().includes(visitForm.diaSemana)) b.classList.add('active');
+        else b.classList.remove('active');
+      });
 
       // Frequência
       visitForm.frequencia = v.frequencia || 'Semanal';
@@ -1356,8 +1416,6 @@
       });
 
       calculateVisitTotal();
-
-      // Rolar a página para o topo da aba de visitas
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -1381,7 +1439,8 @@
             </div>
             <div style="font-size:13px; color:var(--text-muted); line-height:1.6; margin-top:8px;">
               <p>📍 <strong>Endereço:</strong> ${v.endereco || 'N/A'}</p>
-              <p>🔄 <strong>Frequência:</strong> ${v.frequencia || 'Semanal'} | 🖥️ Escritório: ${v.escritorio ? 'Sim' : 'Não'} | 🏠 Trab. Casa: ${v.home ? 'Sim' : 'Não'}</p>
+              <p>📅 <strong>Dia:</strong> ${(v.diaSemana || 'segunda').toUpperCase()} | 🔄 ${v.frequencia || 'Semanal'}</p>
+              <p>🖥️ Escritório: ${v.escritorio ? 'Sim' : 'Não'} | 🏠 Trab. Casa: ${v.home ? 'Sim' : 'Não'}</p>
               <p>🐾 Pet: ${v.pet ? 'Sim' : 'Não'} | 👶 Crianças: ${v.criancas ? 'Sim' : 'Não'}</p>
               <p>🛏 Quartos: ${v.quartos} | 🚪 Lavabo: ${v.lavabo} | 🛋️ Salas: ${v.salas} | 🚿 Banheiros: ${v.bathrooms ? v.bathrooms.length : 0}</p>
               <p>🪵 Piso: ${v.piso} | ⏱️ Combinado: ${v.tempoComb}h | 💰 Total: £${(v.total || 0).toFixed(2)}</p>
