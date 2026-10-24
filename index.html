@@ -87,6 +87,11 @@
     .section-box { background: #1e293b; border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
     .pay-cycle-box { background: #1e3a5f; border: 1px solid var(--primary); border-radius: 12px; padding: 14px; margin-bottom: 16px; }
 
+    /* MODAL / POPUP DE NOVO CLIENTE */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.8); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 16px; }
+    .modal-content { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; width: 100%; max-width: 400px; }
+    .modal-title { font-size: 18px; font-weight: bold; color: var(--primary); margin-bottom: 14px; text-align: center; }
+
     /* VISITAS */
     .form-group { margin-bottom: 14px; }
     .form-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; display: block; letter-spacing: 0.5px; }
@@ -133,6 +138,46 @@
     <button onclick="switchTab('backup')">Backup</button>
   </nav>
 
+  <!-- MODAL DE NOVO AGENDAMENTO (COM DIAS CLICÁVEIS) -->
+  <div id="modal-novo-cliente" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-title">Novo Agendamento</div>
+      
+      <div class="form-group">
+        <label class="form-label">NOME DO CLIENTE</label>
+        <input type="text" id="modal-cli-nome" class="form-input" placeholder="Ex: Ana Souza">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">DIA DA SEMANA</label>
+        <div class="toggle-group" id="modal-dia-toggle">
+          <button class="toggle-btn active" onclick="setModalDia('segunda', this)">Seg</button>
+          <button class="toggle-btn" onclick="setModalDia('terca', this)">Ter</button>
+          <button class="toggle-btn" onclick="setModalDia('quarta', this)">Qua</button>
+          <button class="toggle-btn" onclick="setModalDia('quinta', this)">Qui</button>
+          <button class="toggle-btn" onclick="setModalDia('sexta', this)">Sex</button>
+          <button class="toggle-btn" onclick="setModalDia('outros', this)">Outros</button>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-col">
+          <label class="form-label">DURAÇÃO (H)</label>
+          <input type="number" id="modal-cli-hours" class="form-input" value="3">
+        </div>
+        <div class="form-col">
+          <label class="form-label">VALOR (£)</label>
+          <input type="number" id="modal-cli-value" class="form-input" value="63">
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 16px;">
+        <button class="btn" style="flex:1;" onclick="closeModalNovoCliente()">Cancelar</button>
+        <button class="btn btn-primary" style="flex:1;" onclick="salvarNovoClienteModal()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ABA AGENDA -->
   <div id="tab-agenda">
     <div class="controls-bar">
@@ -147,7 +192,7 @@
         <button class="btn-sub-tab active" id="sub-sem2" onclick="selectWeek('semana2')">Semana 2</button>
         <button class="btn-sub-tab" id="sub-outros" onclick="selectWeek('outros')">Outros / Mensal</button>
       </div>
-      <button class="btn btn-primary" onclick="addNewClient()">+ Novo Agendamento</button>
+      <button class="btn btn-primary" onclick="openModalNovoCliente()">+ Novo Agendamento</button>
     </div>
 
     <div class="days-grid" id="days-container"></div>
@@ -419,6 +464,8 @@
       bathrooms: [{ type: 'Shower' }], 
       piso: 'Piso' 
     };
+
+    let modalSelectedDia = 'segunda';
 
     const clientAddresses = {
       "Bernadette": "York Place, BA15PU",
@@ -783,19 +830,52 @@
       }
     }
 
-    function addNewClient() {
-      const name = prompt("Nome do Cliente:");
-      if (!name) return;
-      const day = prompt("Dia da semana (segunda, terca, quarta, quinta, sexta):", "segunda").toLowerCase();
-      const hours = prompt("Duração (horas):", "3");
-      const value = prompt("Valor (£):", "63");
+    /* CONTROLE DO MODAL DE NOVO AGENDAMENTO NA AGENDA */
+    function openModalNovoCliente() {
+      document.getElementById('modal-cli-nome').value = '';
+      document.getElementById('modal-cli-hours').value = '3';
+      document.getElementById('modal-cli-value').value = '63';
+      modalSelectedDia = 'segunda';
+      
+      const btns = document.querySelectorAll('#modal-dia-toggle button');
+      btns.forEach((b, i) => { if(i===0) b.classList.add('active'); else b.classList.remove('active'); });
 
-      if (appData.weeks[appData.selectedWeekKey][day]) {
-        appData.weeks[appData.selectedWeekKey][day].push({
+      document.getElementById('modal-novo-cliente').style.display = 'flex';
+    }
+
+    function closeModalNovoCliente() {
+      document.getElementById('modal-novo-cliente').style.display = 'none';
+    }
+
+    function setModalDia(val, btn) {
+      modalSelectedDia = val;
+      document.querySelectorAll('#modal-dia-toggle button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function salvarNovoClienteModal() {
+      const name = document.getElementById('modal-cli-nome').value.trim();
+      if (!name) { alert("Por favor, digite o nome do cliente."); return; }
+
+      const hours = parseFloat(document.getElementById('modal-cli-hours').value) || 0;
+      const value = parseFloat(document.getElementById('modal-cli-value').value) || 0;
+
+      const targetWeek = appData.weeks[appData.selectedWeekKey];
+      if (targetWeek && targetWeek[modalSelectedDia]) {
+        targetWeek[modalSelectedDia].push({
           id: Math.random().toString(36).substr(2, 7),
-          name: name, horario: "08:00", horarioFim: "", hours: parseFloat(hours) || 0, value: parseFloat(value) || 0, pay: "cash", workers: [], expanded: true
+          name: name,
+          horario: "08:00",
+          horarioFim: "",
+          hours: hours,
+          value: value,
+          pay: "cash",
+          workers: [],
+          expanded: true
         });
-        saveData(); renderAll();
+        saveData();
+        renderAll();
+        closeModalNovoCliente();
       }
     }
 
@@ -1338,10 +1418,8 @@
         appData.visits.push(visitData);
       }
 
-      // Adiciona automaticamente na Agenda da semana selecionada se for um novo agendamento ou se alterado
       let targetWeek = appData.weeks[appData.selectedWeekKey];
       if (targetWeek && targetWeek[visitForm.diaSemana]) {
-        // Verifica se já existe na agenda para não duplicar, senão adiciona
         let existingClient = targetWeek[visitForm.diaSemana].find(c => c.name === nome);
         if (!existingClient) {
           targetWeek[visitForm.diaSemana].push({
@@ -1380,14 +1458,12 @@
       document.getElementById('v-tempo-comb').value = v.tempoComb || '';
       document.getElementById('v-rate').value = v.rate || '';
 
-      // Dia da Semana
       visitForm.diaSemana = v.diaSemana || 'segunda';
       document.querySelectorAll('#dia-semana-toggle button').forEach(b => {
         if (b.innerText.toLowerCase().includes(visitForm.diaSemana)) b.classList.add('active');
         else b.classList.remove('active');
       });
 
-      // Frequência
       visitForm.frequencia = v.frequencia || 'Semanal';
       document.querySelectorAll('#frequencia-toggle button').forEach(b => {
         if (b.innerText.toLowerCase() === visitForm.frequencia.toLowerCase()) b.classList.add('active');
