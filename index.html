@@ -447,8 +447,20 @@
     const db = firebase.database();
     const appDataRef = db.ref('sm_cleaners_app_data');
 
-    let currentWeekOffset = 0;
-    const baseSemana1Start = new Date(2026, 8, 28); // 28/09/2026
+    // SISTEMA DE CÁLCULO DINÂMICO DE SEMANA COM BASE NA DATA ATUAL DO DISPOSITIVO
+    const baseSemana1Start = new Date(2026, 9, 26); // 26/10/2026 (Segunda-feira desta semana)
+    
+    function calculateAutomaticWeekOffset() {
+      let now = new Date();
+      // Zerar horas para comparar apenas dias
+      now.setHours(0,0,0,0);
+      let diffTime = now.getTime() - baseSemana1Start.getTime();
+      let diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      let diffWeeks = Math.floor(diffDays / 7);
+      return diffWeeks;
+    }
+
+    let currentWeekOffset = calculateAutomaticWeekOffset();
 
     const fixedMensalClients = ["Bernadette", "Bushra"];
     let visitForm = { 
@@ -548,7 +560,7 @@
     }
 
     const exactListData = {
-      selectedWeekKey: "semana2",
+      selectedWeekKey: "semana1",
       teamMembers: [
         { name: "Roberta", rate: 15, isOwner: false },
         { name: "Lorruama", rate: 12.21, isOwner: false },
@@ -714,7 +726,8 @@
 
           let isFixedMensal = fixedMensalClients.includes(client.name);
           let cardDomId = `card_${day}_${idx}`;
-          let isExpanded = client.expanded === true;
+          // Cartões sempre abertos por padrão a menos que explicitamente fechados pelo usuário
+          let isExpanded = client.expanded !== false;
 
           dayHtml += `
             <div class="card ${isExpanded ? 'expanded' : ''}" id="${cardDomId}">
