@@ -39,6 +39,11 @@
     .btn { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-color); background: #334155; cursor: pointer; font-size: 13px; color: #fff; font-weight: 600; }
     .btn-primary { background: var(--primary); color: #0f172a; border: none; width: 100%; padding: 12px; font-size: 15px; font-weight: 700; border-radius: 8px; }
 
+    /* CARD DE SOMATÓRIA TOTAL DA SEMANA */
+    .week-total-banner { background: linear-gradient(135deg, #1e3a5f, #0f172a); border: 1px solid var(--primary); border-radius: 12px; padding: 14px; margin-bottom: 16px; text-align: center; }
+    .week-total-banner h3 { font-size: 14px; color: var(--primary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .week-total-banner .totals-row { display: flex; justify-content: space-around; font-size: 14px; margin-top: 8px; font-weight: bold; color: #fff; }
+
     .days-grid { display: flex; flex-direction: column; gap: 16px; }
     .day-column { background: #1e293b; border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; }
     .day-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color); }
@@ -189,10 +194,19 @@
 
       <div class="week-selector">
         <button class="btn-sub-tab" id="sub-sem1" onclick="selectWeek('semana1')">Semana 1</button>
-        <button class="btn-sub-tab active" id="sub-sem2" onclick="selectWeek('semana2')">Semana 2</button>
+        <button class="btn-sub-tab" id="sub-sem2" onclick="selectWeek('semana2')">Semana 2</button>
         <button class="btn-sub-tab" id="sub-outros" onclick="selectWeek('outros')">Outros / Mensal</button>
       </div>
       <button class="btn btn-primary" onclick="openModalNovoCliente()">+ Novo Agendamento</button>
+    </div>
+
+    <!-- BANNER DE SOMATÓRIA TOTAL DA SEMANA SELECIONADA -->
+    <div class="week-total-banner">
+      <h3 id="banner-week-title">Somatória Total da Semana</h3>
+      <div class="totals-row">
+        <span>⏱️ Horas: <strong id="banner-total-hours" style="color:var(--primary);">0.0h</strong></span>
+        <span>💰 Faturamento: <strong id="banner-total-value" style="color:var(--accent);">£0.00</strong></span>
+      </div>
     </div>
 
     <div class="days-grid" id="days-container"></div>
@@ -447,20 +461,30 @@
     const db = firebase.database();
     const appDataRef = db.ref('sm_cleaners_app_data');
 
-    // SISTEMA DE CÁLCULO DINÂMICO DE SEMANA COM BASE NA DATA ATUAL DO DISPOSITIVO
-    const baseSemana1Start = new Date(2026, 9, 26); // 26/10/2026 (Segunda-feira desta semana)
+    // Referência fixa exata: 26/10/2026 (Segunda-feira da Semana 1)
+    const baseSemana1Start = new Date(2026, 9, 26); 
     
-    function calculateAutomaticWeekOffset() {
+    function calculateAutomaticWeekOffsetAndType() {
       let now = new Date();
-      // Zerar horas para comparar apenas dias
       now.setHours(0,0,0,0);
       let diffTime = now.getTime() - baseSemana1Start.getTime();
       let diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
       let diffWeeks = Math.floor(diffDays / 7);
-      return diffWeeks;
+      
+      let offset = Math.floor(diffWeeks / 2) * 2;
+      let remainder = diffWeeks % 2;
+      
+      let weekKey = "semana1";
+      if (remainder !== 0) {
+        weekKey = "semana2";
+        offset = offset + (remainder > 0 ? 1 : -1);
+      }
+      
+      return { offset: diffWeeks, weekKey: (diffWeeks % 2 === 0 ? "semana1" : "semana2") };
     }
 
-    let currentWeekOffset = calculateAutomaticWeekOffset();
+    let autoSetup = calculateAutomaticWeekOffsetAndType();
+    let currentWeekOffset = autoSetup.offset;
 
     const fixedMensalClients = ["Bernadette", "Bushra"];
     let visitForm = { 
@@ -560,7 +584,7 @@
     }
 
     const exactListData = {
-      selectedWeekKey: "semana1",
+      selectedWeekKey: autoSetup.weekKey,
       teamMembers: [
         { name: "Roberta", rate: 15, isOwner: false },
         { name: "Lorruama", rate: 12.21, isOwner: false },
@@ -607,11 +631,13 @@
 
     let localSaved = localStorage.getItem('sm_cleaners_app_data') || localStorage.getItem('appData');
     let appData = localSaved ? JSON.parse(localSaved) : exactListData;
+    if (!appData.selectedWeekKey) appData.selectedWeekKey = autoSetup.weekKey;
 
     appDataRef.on('value', (snapshot) => {
       const val = snapshot.val();
       if (val && Object.keys(val).length > 0) {
         appData = val;
+        if (!appData.selectedWeekKey) appData.selectedWeekKey = autoSetup.weekKey;
         localStorage.setItem('sm_cleaners_app_data', JSON.stringify(appData));
         localStorage.setItem('appData', JSON.stringify(appData));
         document.getElementById('sync-status').innerText = '🟢 Conectado em Tempo Real (Firebase)';
@@ -636,6 +662,7 @@
 
     function renderAll() {
       updateCycleLabel();
+      updateWeekSelectorUI();
       renderAgenda();
       renderTeamMembersEditor();
       renderTeamSummary();
@@ -647,14 +674,18 @@
       let segDate = getCalculatedDate(appData.selectedWeekKey, 'segunda', currentWeekOffset);
       let sexDate = getCalculatedDate(appData.selectedWeekKey, 'sexta', currentWeekOffset);
       document.getElementById('current-cycle-label').innerText = `${segDate.formatted.slice(0,5)} até ${sexDate.formatted.slice(0,5)}`;
+      document.getElementById('banner-week-title').innerText = `Resumo Total da ${appData.selectedWeekKey === 'semana1' ? 'Semana 1' : appData.selectedWeekKey === 'semana2' ? 'Semana 2' : 'Outros/Mensal'}`;
+    }
+
+    function updateWeekSelectorUI() {
+      document.querySelectorAll('.week-selector button').forEach(btn => btn.classList.remove('active'));
+      if (appData.selectedWeekKey === 'semana1') document.getElementById('sub-sem1').classList.add('active');
+      if (appData.selectedWeekKey === 'semana2') document.getElementById('sub-sem2').classList.add('active');
+      if (appData.selectedWeekKey === 'outros') document.getElementById('sub-outros').classList.add('active');
     }
 
     function selectWeek(weekKey) {
       appData.selectedWeekKey = weekKey;
-      document.querySelectorAll('.week-selector button').forEach(btn => btn.classList.remove('active'));
-      if (weekKey === 'semana1') document.getElementById('sub-sem1').classList.add('active');
-      if (weekKey === 'semana2') document.getElementById('sub-sem2').classList.add('active');
-      if (weekKey === 'outros') document.getElementById('sub-outros').classList.add('active');
       saveData();
       renderAll();
     }
@@ -682,9 +713,16 @@
       const currentWeekObj = appData.weeks[appData.selectedWeekKey] || {};
       const dayKeys = (appData.selectedWeekKey === 'outros') ? ["outros"] : ["segunda", "terca", "quarta", "quinta", "sexta"];
 
+      let sumTotalHoursWeek = 0;
+      let sumTotalValueWeek = 0;
+
       dayKeys.forEach(day => {
         const clients = currentWeekObj[day] || [];
         let totalHours = clients.reduce((acc, c) => acc + (parseFloat(c.hours) || 0), 0);
+        let totalValue = clients.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
+
+        sumTotalHoursWeek += totalHours;
+        sumTotalValueWeek += totalValue;
 
         let calcDate = getCalculatedDate(appData.selectedWeekKey, day, currentWeekOffset);
         let titleDisplay = (day === "outros") ? "Clientes Mensais / Outros" : day.charAt(0).toUpperCase() + day.slice(1) + `-feira (${calcDate.formatted.slice(0,5)})`;
@@ -706,7 +744,7 @@
           <div class="day-column">
             <div class="day-header">
               <span class="day-title">${titleDisplay}</span>
-              <span class="day-stats">${totalHours.toFixed(1)}h Totais</span>
+              <span class="day-stats">${totalHours.toFixed(1)}h | £${totalValue.toFixed(2)}</span>
             </div>
             ${workerSummaryText ? `<div class="day-workers-summary">👥 <strong>Horas do dia:</strong> ${workerSummaryText}</div>` : ''}
         `;
@@ -726,8 +764,7 @@
 
           let isFixedMensal = fixedMensalClients.includes(client.name);
           let cardDomId = `card_${day}_${idx}`;
-          // Cartões sempre abertos por padrão a menos que explicitamente fechados pelo usuário
-          let isExpanded = client.expanded !== false;
+          let isExpanded = client.expanded !== false; // Sempre aberto por padrão
 
           dayHtml += `
             <div class="card ${isExpanded ? 'expanded' : ''}" id="${cardDomId}">
@@ -785,11 +822,15 @@
         dayHtml += `</div>`;
         container.innerHTML += dayHtml;
       });
+
+      // Atualiza o banner com a somatória total da semana
+      document.getElementById('banner-total-hours').innerText = `${sumTotalHoursWeek.toFixed(1)}h`;
+      document.getElementById('banner-total-value').innerText = `£${sumTotalValueWeek.toFixed(2)}`;
     }
 
     function toggleCardExpand(day, idx) {
       const client = appData.weeks[appData.selectedWeekKey][day][idx];
-      client.expanded = !client.expanded;
+      client.expanded = !(client.expanded !== false);
       saveData();
       renderAgenda();
     }
