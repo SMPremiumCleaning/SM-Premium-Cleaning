@@ -39,20 +39,29 @@
     .btn { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-color); background: #334155; cursor: pointer; font-size: 13px; color: #fff; font-weight: 600; }
     .btn-primary { background: var(--primary); color: #0f172a; border: none; width: 100%; padding: 12px; font-size: 15px; font-weight: 700; border-radius: 8px; }
 
-    /* CARD DE SOMATÓRIA TOTAL DA SEMANA */
+    /* BANNER DE SOMATÓRIA TOTAL DA SEMANA */
     .week-total-banner { background: linear-gradient(135deg, #1e3a5f, #0f172a); border: 1px solid var(--primary); border-radius: 12px; padding: 14px; margin-bottom: 16px; text-align: center; }
     .week-total-banner h3 { font-size: 14px; color: var(--primary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
     .week-total-banner .totals-row { display: flex; justify-content: space-around; font-size: 14px; margin-top: 8px; font-weight: bold; color: #fff; }
 
-    .days-grid { display: flex; flex-direction: column; gap: 16px; }
-    .day-column { background: #1e293b; border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; }
-    .day-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color); }
+    .days-grid { display: flex; flex-direction: column; gap: 12px; }
+    .day-column { background: #1e293b; border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; transition: all 0.2s ease; }
+    .day-column.day-collapsed { padding-bottom: 14px; }
+    
+    .day-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
+    .day-column.day-expanded .day-header { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); }
+    
+    .day-title-container { display: flex; align-items: center; gap: 8px; }
     .day-title { font-weight: 700; font-size: 16px; color: var(--primary); }
+    .day-toggle-arrow { font-size: 12px; color: var(--primary); font-weight: bold; }
     .day-stats { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+
+    .day-content-area { display: none; }
+    .day-column.day-expanded .day-content-area { display: block; }
 
     .day-workers-summary { font-size: 11px; color: var(--accent); margin-bottom: 12px; background: #0f172a; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-color); }
 
-    /* CARTÃO EXPANSÍVEL (ACORDEÃO) */
+    /* CARTÃO EXPANSÍVEL (ACORDEÃO DE CLIENTES) */
     .card { background: #0f172a; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-bottom: 8px; transition: all 0.2s ease; }
     .card-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
     .client-title-row { display: flex; align-items: center; gap: 8px; }
@@ -461,7 +470,6 @@
     const db = firebase.database();
     const appDataRef = db.ref('sm_cleaners_app_data');
 
-    // Referência fixa exata: 26/10/2026 (Segunda-feira da Semana 1)
     const baseSemana1Start = new Date(2026, 9, 26); 
     
     function calculateAutomaticWeekOffsetAndType() {
@@ -560,6 +568,21 @@
       else alert(`Endereço de ${clientName} não encontrado.`);
     }
 
+    function toggleDayExpand(dayKey) {
+      const dayCol = document.getElementById(`day_col_${dayKey}`);
+      if (dayCol) {
+        dayCol.classList.toggle('day-expanded');
+        dayCol.classList.toggle('day-collapsed');
+        const arrow = dayCol.querySelector('.day-toggle-arrow');
+        const isExp = dayCol.classList.contains('day-expanded');
+        if (arrow) arrow.innerText = isExp ? '▲' : '▼';
+        
+        // Salvar estado no objeto de dados para persistir
+        if (!appData.dayStates) appData.dayStates = {};
+        appData.dayStates[`${appData.selectedWeekKey}_${dayKey}`] = isExp;
+      }
+    }
+
     function toggleCardExpand(cardId) {
       const cardEl = document.getElementById(cardId);
       if (cardEl) {
@@ -585,6 +608,7 @@
 
     const exactListData = {
       selectedWeekKey: autoSetup.weekKey,
+      dayStates: {},
       teamMembers: [
         { name: "Roberta", rate: 15, isOwner: false },
         { name: "Lorruama", rate: 12.21, isOwner: false },
@@ -596,8 +620,8 @@
       weeks: {
         semana1: {
           segunda: [
-            { id: "s1_seg_1", name: "Bernadette", horario: "08:00", horarioFim: "10:30", hours: 10, value: 200, pay: "transfer", mensal: true, workers: ["Roberta", "Lorruama", "Suzana", "Márcio"] },
-            { id: "s1_seg_2", name: "Bushra", horario: "10:45", horarioFim: "11:45", hours: 4, value: 84, pay: "transfer", mensal: true, workers: ["Roberta", "Lorruama"] },
+            { id: "s1_seg_1", name: "Bernadette", horario: "08:00", horarioFim: "10:30", hours: 10, value: 200, pay: "transfer", mensal: true, workers: ["Lorruama", "Suzana", "Márcio"] },
+            { id: "s1_seg_2", name: "Bushra", horario: "10:45", horarioFim: "11:45", hours: 4, value: 84, pay: "transfer", mensal: true, workers: ["Lorruama"] },
             { id: "s1_seg_3", name: "Jessica", horario: "12:00", horarioFim: "13:30", hours: 3, value: 63, pay: "transfer", mensal: false, workers: [] },
             { id: "s1_seg_4", name: "Katrina", horario: "13:35", horarioFim: "14:50", hours: 5, value: 105, pay: "transfer", mensal: false, workers: [] },
             { id: "s1_seg_5", name: "Rachel Nova", horario: "15:00", horarioFim: "16:00", hours: 3.5, value: 73.5, pay: "cash", mensal: false, workers: [] },
@@ -606,13 +630,13 @@
           ],
           terca: [], quarta: [], quinta: [],
           sexta: [
-            { id: "s1_sex_1", name: "Bernadette", horario: "08:00", horarioFim: "10:30", hours: 10, value: 200, pay: "transfer", mensal: true, workers: ["Roberta", "Lorruama"] }
+            { id: "s1_sex_1", name: "Bernadette", horario: "08:00", horarioFim: "10:30", hours: 10, value: 200, pay: "transfer", mensal: true, workers: ["Lorruama"] }
           ]
         },
         semana2: {
           segunda: [
-            { id: "s2_seg_1", name: "Bernadette", horario: "08:00", horarioFim: "10:30", hours: 10, value: 200, pay: "transfer", mensal: true, workers: ["Roberta", "Lorruama", "Suzana", "Márcio"] },
-            { id: "s2_seg_2", name: "Bushra", horario: "10:45", horarioFim: "11:45", hours: 4, value: 84, pay: "transfer", mensal: true, workers: ["Roberta", "Lorruama"] },
+            { id: "s2_seg_1", name: "Bernadette", horario: "08:00", horarioFim: "10:30", hours: 10, value: 200, pay: "transfer", mensal: true, workers: ["Lorruama", "Suzana", "Márcio"] },
+            { id: "s2_seg_2", name: "Bushra", horario: "10:45", horarioFim: "11:45", hours: 4, value: 84, pay: "transfer", mensal: true, workers: ["Lorruama"] },
             { id: "s2_seg_3", name: "Jessica", horario: "12:00", horarioFim: "13:00", hours: 3, value: 63, pay: "transfer", mensal: false, workers: [] },
             { id: "s2_seg_4", name: "Katrina", horario: "13:10", horarioFim: "14:30", hours: 5, value: 105, pay: "transfer", mensal: false, workers: [] },
             { id: "s2_seg_5", name: "Rachel Nova", horario: "14:40", horarioFim: "15:40", hours: 3.5, value: 73.5, pay: "cash", mensal: false, workers: [] },
@@ -632,12 +656,14 @@
     let localSaved = localStorage.getItem('sm_cleaners_app_data') || localStorage.getItem('appData');
     let appData = localSaved ? JSON.parse(localSaved) : exactListData;
     if (!appData.selectedWeekKey) appData.selectedWeekKey = autoSetup.weekKey;
+    if (!appData.dayStates) appData.dayStates = {};
 
     appDataRef.on('value', (snapshot) => {
       const val = snapshot.val();
       if (val && Object.keys(val).length > 0) {
         appData = val;
         if (!appData.selectedWeekKey) appData.selectedWeekKey = autoSetup.weekKey;
+        if (!appData.dayStates) appData.dayStates = {};
         localStorage.setItem('sm_cleaners_app_data', JSON.stringify(appData));
         localStorage.setItem('appData', JSON.stringify(appData));
         document.getElementById('sync-status').innerText = '🟢 Conectado em Tempo Real (Firebase)';
@@ -727,6 +753,10 @@
         let calcDate = getCalculatedDate(appData.selectedWeekKey, day, currentWeekOffset);
         let titleDisplay = (day === "outros") ? "Clientes Mensais / Outros" : day.charAt(0).toUpperCase() + day.slice(1) + `-feira (${calcDate.formatted.slice(0,5)})`;
 
+        // Estado do dia (aberto ou fechado por padrão)
+        let stateKey = `${appData.selectedWeekKey}_${day}`;
+        let isDayExpanded = appData.dayStates[stateKey] === true; // Fechado por padrão, ou aberto se salvo como true
+
         let workerHoursDay = {};
         clients.forEach(c => {
           let assigned = c.workers || [];
@@ -741,12 +771,17 @@
         let workerSummaryText = Object.keys(workerHoursDay).map(w => `<strong>${w}:</strong> ${workerHoursDay[w].toFixed(1)}h`).join(' | ');
 
         let dayHtml = `
-          <div class="day-column">
-            <div class="day-header">
-              <span class="day-title">${titleDisplay}</span>
-              <span class="day-stats">${totalHours.toFixed(1)}h | £${totalValue.toFixed(2)}</span>
+          <div class="day-column ${isDayExpanded ? 'day-expanded' : 'day-collapsed'}" id="day_col_${day}">
+            <div class="day-header" onclick="toggleDayExpand('${day}')">
+              <div class="day-title-container">
+                <span class="day-toggle-arrow">${isDayExpanded ? '▲' : '▼'}</span>
+                <span class="day-title">${titleDisplay}</span>
+              </div>
+              <span class="day-stats">${totalHours.toFixed(1)}h</span>
             </div>
-            ${workerSummaryText ? `<div class="day-workers-summary">👥 <strong>Horas do dia:</strong> ${workerSummaryText}</div>` : ''}
+            
+            <div class="day-content-area">
+              ${workerSummaryText ? `<div class="day-workers-summary">👥 <strong>Horas do dia:</strong> ${workerSummaryText}</div>` : ''}
         `;
 
         clients.forEach((client, idx) => {
@@ -764,7 +799,7 @@
 
           let isFixedMensal = fixedMensalClients.includes(client.name);
           let cardDomId = `card_${day}_${idx}`;
-          let isExpanded = client.expanded !== false; // Sempre aberto por padrão
+          let isExpanded = client.expanded !== false;
 
           dayHtml += `
             <div class="card ${isExpanded ? 'expanded' : ''}" id="${cardDomId}">
@@ -819,11 +854,10 @@
           `;
         });
 
-        dayHtml += `</div>`;
+        dayHtml += `</div></div>`;
         container.innerHTML += dayHtml;
       });
 
-      // Atualiza o banner com a somatória total da semana
       document.getElementById('banner-total-hours').innerText = `${sumTotalHoursWeek.toFixed(1)}h`;
       document.getElementById('banner-total-value').innerText = `£${sumTotalValueWeek.toFixed(2)}`;
     }
